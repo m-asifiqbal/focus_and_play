@@ -31,6 +31,43 @@ import '../helpers/app_harness.dart';
 import '../helpers/screen_capture.dart';
 
 void main() {
+  // Every page whose toolbar used to scroll away with its content.
+  final pinned = <(String, String)>[
+    // (route, a text in the toolbar)
+    (Routes.home, 'Sam'),
+    (Routes.insights, 'Insights'),
+    (Routes.settings, 'Settings'),
+    (Routes.backup, 'Local backup'),
+  ];
+  for (final (route, header) in pinned) {
+    testWidgets('$route: the toolbar stays put while the page scrolls', (
+      tester,
+    ) async {
+      final c = await pumpApp(tester, route: route);
+      final before = tester.getTopLeft(find.text(header).first);
+      await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        tester.getTopLeft(find.text(header).first),
+        before,
+        reason: 'header must not move',
+      );
+      await closeApp(tester, c);
+    });
+  }
+
+  testWidgets('game insights: the back button stays put while scrolling', (
+    tester,
+  ) async {
+    final c = await pumpApp(tester, route: Routes.gameInsights(GameId.thread));
+    final back = find.bySemanticsLabel('Back');
+    final before = tester.getTopLeft(back.first);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.getTopLeft(back.first), before);
+    await closeApp(tester, c);
+  });
+
   testWidgets('switching tabs slides the pages and keeps each tab\'s state', (
     tester,
   ) async {

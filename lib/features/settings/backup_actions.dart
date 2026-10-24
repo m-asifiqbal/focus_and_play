@@ -31,8 +31,14 @@ Future<bool> confirmRestore(BuildContext context, BackupInfo info) async {
         style: MiText.body.copyWith(color: ctx.mi.inkSoft),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Restore')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Restore'),
+        ),
       ],
     ),
   );
@@ -44,7 +50,9 @@ Future<bool> confirmRestore(BuildContext context, BackupInfo info) async {
 Future<bool> pickAndRestore(BuildContext context, WidgetRef ref) async {
   final PlatformFile? file;
   try {
-    file = await FilePicker.pickFile(dialogTitle: 'Choose a ${AppInfo.name} backup');
+    file = await FilePicker.pickFile(
+      dialogTitle: 'Choose a ${AppInfo.name} backup',
+    );
   } catch (_) {
     if (context.mounted) _snack(context, "Couldn't open the file picker.");
     return false;
@@ -65,7 +73,11 @@ Future<bool> pickAndRestore(BuildContext context, WidgetRef ref) async {
 }
 
 /// Restores an already-decoded backup after confirming.
-Future<bool> restorePayload(BuildContext context, WidgetRef ref, BackupPayload payload) async {
+Future<bool> restorePayload(
+  BuildContext context,
+  WidgetRef ref,
+  BackupPayload payload,
+) async {
   if (!await confirmRestore(context, payload.info)) return false;
   await ref.read(saveProvider.notifier).replaceAll(payload.data);
   if (context.mounted) _snack(context, 'Progress restored');
@@ -76,9 +88,15 @@ Future<bool> restorePayload(BuildContext context, WidgetRef ref, BackupPayload p
 Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
   final now = ref.read(clockProvider)();
   final bytes = SaveStore.encodeBackup(ref.read(saveProvider), now);
-  final name = 'mind-isles-${DateFormat('yyyyMMdd-HHmm').format(now)}.${AppInfo.backupExtension}';
+  final name =
+      'mind-isles-${DateFormat('yyyyMMdd-HHmm').format(now)}.${AppInfo.backupExtension}';
   try {
-    final uri = await FilePicker.saveFile(fileName: name, bytes: bytes, mimeType: 'application/json', dialogTitle: 'Save your backup');
+    final uri = await FilePicker.saveFile(
+      fileName: name,
+      bytes: bytes,
+      mimeType: 'application/json',
+      dialogTitle: 'Save your backup',
+    );
     if (uri != null && context.mounted) _snack(context, 'Backup saved');
   } catch (_) {
     if (context.mounted) _snack(context, "Couldn't save the backup file.");
@@ -88,6 +106,8 @@ Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
 /// Saves a copy in the app's own backups folder ("Back up now").
 Future<void> backupNow(BuildContext context, WidgetRef ref) async {
   await ref.read(saveProvider.notifier).flush();
-  await ref.read(saveStoreProvider).writeLocalBackup(ref.read(saveProvider), ref.read(clockProvider)());
+  await ref
+      .read(saveStoreProvider)
+      .writeLocalBackup(ref.read(saveProvider), ref.read(clockProvider)());
   if (context.mounted) _snack(context, 'Backed up on this phone');
 }
