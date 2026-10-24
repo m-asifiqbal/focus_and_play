@@ -1,6 +1,6 @@
 # CLAUDE.md — Mind Isles
 
-Offline puzzle game (Android + iOS): four islands, each with one puzzle (Thread, Quilt, Twist, Sudoku Six), 60 levels in four tiers, a daily puzzle, lives/clock/hints, Insights, Settings, local backup. Design canvas: https://claude.ai/artifact/WRdJQoeZueXJsnKGqpk4GY
+Offline puzzle game (Android + iOS): six islands, each with one puzzle (Thread, Quilt, Twist, Sudoku Six, Sleuth, Bridges), 60 levels in four tiers, a daily puzzle, lives/clock/hints, Insights, Settings, local backup. Design canvas: https://claude.ai/artifact/WRdJQoeZueXJsnKGqpk4GY
 
 ## Rules
 1. **Offline first.** The only network code is AdMob (`lib/core/ads/`). No analytics, no accounts, no other network packages.

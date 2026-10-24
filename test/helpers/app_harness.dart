@@ -27,6 +27,8 @@ SaveData sampleSave({
     'howto_quilt',
     'howto_twist',
     'howto_sudoku',
+    'howto_sleuth',
+    'howto_bridges',
   },
 }) {
   final attempts = <Attempt>[];

@@ -49,29 +49,75 @@ class AppShell extends StatelessWidget {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Row(
-                children: [
-                  for (final (i, icon, label) in const [
-                    (0, Icons.home_rounded, 'Home'),
-                    (1, Icons.bar_chart_rounded, 'Insights'),
-                    (2, Icons.settings_rounded, 'Settings'),
-                  ])
-                    Expanded(
-                      child: _Tab(
-                        icon: icon,
-                        label: label,
-                        selected: shell.currentIndex == i,
-                        onTap: () => shell.goBranch(
-                          i,
-                          initialLocation: i == shell.currentIndex,
-                        ),
-                      ),
-                    ),
-                ],
+              child: _NavBar(
+                index: shell.currentIndex,
+                onTap: (i) =>
+                    shell.goBranch(i, initialLocation: i == shell.currentIndex),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The three tabs with one highlight pill that slides from the old tab to the new
+/// one (instead of fading out here and in there), while the icons pop.
+class _NavBar extends StatelessWidget {
+  const _NavBar({required this.index, required this.onTap});
+  final int index;
+  final ValueChanged<int> onTap;
+
+  static const _tabs = [
+    (Icons.home_rounded, 'Home'),
+    (Icons.bar_chart_rounded, 'Insights'),
+    (Icons.settings_rounded, 'Settings'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.mi;
+    final instant = MediaQuery.disableAnimationsOf(context);
+    return SizedBox(
+      height: 54,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final w = box.maxWidth / _tabs.length;
+          return Stack(
+            children: [
+              AnimatedPositionedDirectional(
+                duration: instant
+                    ? Duration.zero
+                    : const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
+                start: index * w + 4,
+                width: w - 8,
+                top: 0,
+                height: 54,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: c.brandTint,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  for (final (i, (icon, label)) in _tabs.indexed)
+                    Expanded(
+                      child: _Tab(
+                        icon: icon,
+                        label: label,
+                        selected: index == i,
+                        onTap: () => onTap(i),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -103,23 +149,15 @@ class _Tab extends StatelessWidget {
         excludeFromSemantics: true,
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 220),
+        child: SizedBox(
           height: 54,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: selected ? c.brandTint : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedScale(
-                scale: selected ? 1.12 : 1,
+                scale: selected ? 1.08 : 1,
                 duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutBack,
+                curve: Curves.easeOutCubic,
                 child: Icon(icon, color: fg, size: 24),
               ),
               const SizedBox(height: 2),

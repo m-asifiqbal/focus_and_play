@@ -24,7 +24,10 @@ class FeedbackService {
     _ready = true;
     try {
       await AudioPlayer.global.setAudioContext(
-        AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers, respectSilence: true).build(),
+        AudioContextConfig(
+          focus: AudioContextConfigFocus.mixWithOthers,
+          respectSilence: true,
+        ).build(),
       );
       for (var i = 0; i < 4; i++) {
         final p = AudioPlayer();
@@ -72,4 +75,6 @@ class FeedbackService {
   }
 }
 
-final feedbackProvider = Provider<FeedbackService>((ref) => FeedbackService(ref));
+final feedbackProvider = Provider<FeedbackService>(
+  (ref) => FeedbackService(ref),
+);

@@ -31,6 +31,11 @@ abstract class BoardController extends ChangeNotifier {
   /// Applies one hint; returns what to tell the player, or null if nothing was shown.
   HintNote? hint();
 
+  /// Set when the player has used every guess without solving (Sleuth): the
+  /// frame costs a life, shows this text ("The word was SHARK.") and calls
+  /// [reset] to start the round again. Null for boards that can't fail.
+  String? get failMessage => null;
+
   /// True while a multi-step hint waits for its follow-up (pressing Hint again
   /// finishes it for free), so the frame must not ask for a hint to be spent.
   bool get hintPending => false;

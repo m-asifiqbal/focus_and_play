@@ -33,6 +33,16 @@ List<String> howToSteps(GameId g) => switch (g) {
     'Each row, each column and each 2 × 3 box holds 1 to 6 exactly once.',
     'Turn on Notes to pencil in ideas.',
   ],
+  GameId.sleuth => [
+    'One word on the list is the secret. Tap a word, then Guess.',
+    'Green: right letter, right place. Yellow: right letter, wrong place. Grey: not in the word.',
+    'Use the colours to rule words out — find the secret before your guesses run out.',
+  ],
+  GameId.bridges => [
+    'Tap the gap between two islets to build a bridge. Tap again for a double bridge, once more to remove it.',
+    'Each islet needs exactly the number of bridges it shows. Bridges can\'t cross.',
+    'Join every islet into one group to finish.',
+  ],
 };
 
 Future<void> showHowToPlay(BuildContext context, GameId game) =>
@@ -323,6 +333,83 @@ class _DemoPainter extends CustomPainter {
               text('${answer[i]}', ctr(i), const Color(0xFF1D6BB0), cell * .45);
             }
           }
+        }
+      case GameId.sleuth:
+        // Secret word BAT. First guess CAT: C grey, A and T green. Second guess: BAT.
+        const green = Color(0xFF2FB36B), grey = Color(0xFFD9DEE5);
+        const guesses = [
+          ('CAT', [grey, green, green]),
+          ('BAT', [green, green, green]),
+        ];
+        for (var r = 0; r < guesses.length; r++) {
+          final (word, colours) = guesses[r];
+          for (var k = 0; k < 3; k++) {
+            // Each tile flips to its colour in turn.
+            final at = (r * 3 + k) / 6.0;
+            final shown = p >= at + .05;
+            final cellRect = Rect.fromLTWH(
+              k * cell + 3,
+              r * cell + 3,
+              cell - 6,
+              cell - 6,
+            );
+            if (shown) {
+              canvas.drawRRect(
+                RRect.fromRectAndRadius(cellRect, const Radius.circular(12)),
+                Paint()..color = colours[k],
+              );
+            }
+            if (p >= at) {
+              text(
+                word[k],
+                Offset(k * cell + cell / 2, r * cell + cell / 2),
+                shown && colours[k] == green
+                    ? Colors.white
+                    : const Color(0xFF13213C),
+                cell * .4,
+              );
+            }
+          }
+        }
+      case GameId.bridges:
+        // Islets A(0) 3, B(2) 2, C(6) 2, D(8) 1: a double bridge A–B, then A–C and C–D.
+        final wood = Paint()
+          ..color = const Color(0xFF8A5A2B)
+          ..strokeWidth = 4
+          ..strokeCap = StrokeCap.round;
+        void bridge(
+          Offset a,
+          Offset b,
+          double from,
+          double to, {
+          double gap = 0,
+        }) {
+          final q = ((p - from) / (to - from)).clamp(0.0, 1.0);
+          if (q <= 0) return;
+          final d = (b - a);
+          final n = Offset(-d.dy, d.dx) / d.distance * gap;
+          canvas.drawLine(a + n, Offset.lerp(a + n, b + n, q)!, wood);
+        }
+        bridge(ctr(0), ctr(2), 0, .3, gap: -4);
+        bridge(ctr(0), ctr(2), .2, .45, gap: 4);
+        bridge(ctr(0), ctr(6), .45, .65);
+        bridge(ctr(6), ctr(8), .65, .85);
+        const needs = {0: 3, 2: 2, 6: 2, 8: 1};
+        for (final e in needs.entries) {
+          canvas.drawCircle(
+            ctr(e.key),
+            cell * .3,
+            Paint()..color = const Color(0xFF14B8A6),
+          );
+          canvas.drawCircle(
+            ctr(e.key),
+            cell * .3,
+            Paint()
+              ..color = Colors.white
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.5,
+          );
+          text('${e.value}', ctr(e.key), const Color(0xFF0D1626), cell * .3);
         }
     }
   }

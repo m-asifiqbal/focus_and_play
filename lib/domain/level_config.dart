@@ -33,6 +33,21 @@ class SudokuKnobs {
   final int givens;
 }
 
+/// Sleuth: word length, how many words are on the list, how many guesses the
+/// player gets, and whether ruled-out words are crossed out for them (easy tiers).
+class SleuthKnobs {
+  const SleuthKnobs(this.length, this.candidates, this.tries, this.assist);
+  final int length, candidates, tries;
+  final bool assist;
+}
+
+/// Bridges: grid size, number of islets and the share of double bridges.
+class BridgesKnobs {
+  const BridgesKnobs(this.rows, this.cols, this.islands, this.doubles);
+  final int rows, cols, islands;
+  final double doubles;
+}
+
 /// Everything the play screen needs to start a level.
 class LevelSpec {
   const LevelSpec({
@@ -90,11 +105,18 @@ abstract final class LevelConfig {
 
   /// Today's daily puzzle: the game rotates every day, difficulty is mid-Medium.
   static LevelSpec daily(DateTime localDay) {
-    final days = DateTime.utc(localDay.year, localDay.month, localDay.day).millisecondsSinceEpoch ~/ 86400000;
+    final days =
+        DateTime.utc(
+          localDay.year,
+          localDay.month,
+          localDay.day,
+        ).millisecondsSinceEpoch ~/
+        86400000;
     final game = GameId.values[days % GameId.values.length];
     final knobs = _knobs(game, Tier.medium, .5, 23);
     final par = _par(game, Tier.medium, knobs);
-    final key = '${localDay.year.toString().padLeft(4, '0')}-${localDay.month.toString().padLeft(2, '0')}-${localDay.day.toString().padLeft(2, '0')}';
+    final key =
+        '${localDay.year.toString().padLeft(4, '0')}-${localDay.month.toString().padLeft(2, '0')}-${localDay.day.toString().padLeft(2, '0')}';
     return LevelSpec(
       game: game,
       level: 0,
@@ -109,7 +131,8 @@ abstract final class LevelConfig {
   }
 
   /// Stable per-level seed (never change: it would change every published level).
-  static int levelSeed(GameId game, int level) => (game.index + 1) * 1000003 + level * 7919 + 0x5EED;
+  static int levelSeed(GameId game, int level) =>
+      (game.index + 1) * 1000003 + level * 7919 + 0x5EED;
 
   /// Clock per life: generous enough that losing a life means "stuck", not "slow".
   static int clockFor(int par) {
@@ -122,7 +145,10 @@ abstract final class LevelConfig {
     switch (game) {
       case GameId.thread:
         return switch (tier) {
-          Tier.easy => level <= 4 ? const ThreadKnobs(4, 2) : ThreadKnobs(5, ramp < .5 ? 2 : 1),
+          Tier.easy =>
+            level <= 4
+                ? const ThreadKnobs(4, 2)
+                : ThreadKnobs(5, ramp < .5 ? 2 : 1),
           Tier.medium => ThreadKnobs(6, ramp < .4 ? 2 : (ramp < .8 ? 1 : 0)),
           Tier.hard => ThreadKnobs(7, ramp < .5 ? 1 : 0),
           Tier.expert => ThreadKnobs(8, ramp < .3 ? 1 : 0),
@@ -136,7 +162,10 @@ abstract final class LevelConfig {
         };
       case GameId.twist:
         return switch (tier) {
-          Tier.easy => level <= 8 ? const TwistKnobs(4, 4, 4, 6) : const TwistKnobs(4, 5, 4, 6),
+          Tier.easy =>
+            level <= 8
+                ? const TwistKnobs(4, 4, 4, 6)
+                : const TwistKnobs(4, 5, 4, 6),
           Tier.medium => const TwistKnobs(5, 5, 4, 7),
           Tier.hard => const TwistKnobs(5, 6, 4, 8),
           Tier.expert => const TwistKnobs(6, 6, 4, 8),
@@ -149,6 +178,32 @@ abstract final class LevelConfig {
           Tier.expert => (10, 8),
         };
         return SudokuKnobs((hi - (hi - lo) * ramp).round());
+      case GameId.sleuth:
+        // Longer words and a longer list as the tiers rise. The feedback is so
+        // informative that 4+ guesses are almost never lost, so the stakes come from
+        // fewer guesses (3 from late Hard on) and, from Hard, a list that is not
+        // crossed out for the player.
+        return switch (tier) {
+          Tier.easy => SleuthKnobs(4, ramp < .5 ? 7 : 8, 5, true),
+          Tier.medium => SleuthKnobs(5, ramp < .5 ? 8 : 10, 4, true),
+          Tier.hard => SleuthKnobs(
+            ramp < .5 ? 5 : 6,
+            ramp < .5 ? 10 : 12,
+            ramp < .5 ? 4 : 3,
+            false,
+          ),
+          Tier.expert => SleuthKnobs(6, ramp < .5 ? 12 : 14, 3, false),
+        };
+      case GameId.bridges:
+        return switch (tier) {
+          Tier.easy => BridgesKnobs(5, 5, ramp < .5 ? 6 : 7, .15),
+          Tier.medium => BridgesKnobs(6, 6, ramp < .5 ? 9 : 10, .3),
+          Tier.hard => BridgesKnobs(7, 7, ramp < .5 ? 12 : 14, .35),
+          Tier.expert =>
+            ramp < .6
+                ? BridgesKnobs(8, 8, ramp < .3 ? 16 : 17, .4)
+                : const BridgesKnobs(9, 9, 20, .4),
+        };
     }
   }
 
@@ -162,7 +217,9 @@ abstract final class LevelConfig {
         return const {5: 40, 6: 70, 7: 100, 8: 140}[size]!;
       case GameId.twist:
         final k = knobs as TwistKnobs;
-        return const {16: 45, 20: 60, 25: 80, 30: 100, 36: 130}[k.rows * k.cols] ?? 90;
+        return const {16: 45, 20: 60, 25: 80, 30: 100, 36: 130}[k.rows *
+                k.cols] ??
+            90;
       case GameId.sudoku:
         return switch (tier) {
           Tier.easy => 60,
@@ -170,6 +227,17 @@ abstract final class LevelConfig {
           Tier.hard => 120,
           Tier.expert => 150,
         };
+      case GameId.sleuth:
+        return const {4: 30, 5: 45, 6: 70}[(knobs as SleuthKnobs).length] ?? 60;
+      case GameId.bridges:
+        return const {
+              5: 45,
+              6: 80,
+              7: 120,
+              8: 170,
+              9: 220,
+            }[(knobs as BridgesKnobs).rows] ??
+            120;
     }
   }
 }

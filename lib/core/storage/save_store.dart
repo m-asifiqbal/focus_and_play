@@ -16,7 +16,14 @@ import '../constants/app_info.dart';
 
 /// Summary of one backup file, shown in the backup list and the restore prompt.
 class BackupInfo {
-  const BackupInfo({required this.file, required this.createdAt, required this.automatic, required this.bytes, required this.levels, required this.stars});
+  const BackupInfo({
+    required this.file,
+    required this.createdAt,
+    required this.automatic,
+    required this.bytes,
+    required this.levels,
+    required this.stars,
+  });
   final File? file;
   final DateTime createdAt;
   final bool automatic;
@@ -51,7 +58,8 @@ class SaveStore {
   Future<SaveData?> load() async {
     if (await _save.exists()) {
       try {
-        final json = jsonDecode(await _save.readAsString()) as Map<String, Object?>;
+        final json =
+            jsonDecode(await _save.readAsString()) as Map<String, Object?>;
         return SaveData.fromJson(json);
       } catch (_) {
         final backups = await listBackups();
@@ -67,17 +75,23 @@ class SaveStore {
 
   /// Writes [data] atomically. Calls are serialised so the newest state always wins.
   Future<void> write(SaveData data) {
-    _queue = _queue.then((_) async {
-      await dir.create(recursive: true);
-      final tmp = File('${_save.path}.tmp');
-      await tmp.writeAsString(jsonEncode(data.toJson()), flush: true);
-      await tmp.rename(_save.path);
-    }).catchError((Object _) {});
+    _queue = _queue
+        .then((_) async {
+          await dir.create(recursive: true);
+          final tmp = File('${_save.path}.tmp');
+          await tmp.writeAsString(jsonEncode(data.toJson()), flush: true);
+          await tmp.rename(_save.path);
+        })
+        .catchError((Object _) {});
     return _queue;
   }
 
   /// Wraps a save in the backup envelope.
-  static Uint8List encodeBackup(SaveData data, DateTime now, {bool automatic = false}) {
+  static Uint8List encodeBackup(
+    SaveData data,
+    DateTime now, {
+    bool automatic = false,
+  }) {
     final env = {
       'app': 'mind-isles',
       'version': AppInfo.saveVersion,
@@ -101,10 +115,16 @@ class SaveStore {
     }
     final version = json['version'];
     if (version is int && version > AppInfo.saveVersion) {
-      throw const FormatException('This backup is from a newer version of the app. Update the app first.');
+      throw const FormatException(
+        'This backup is from a newer version of the app. Update the app first.',
+      );
     }
-    final data = SaveData.fromJson((json['save'] as Map).cast<String, Object?>());
-    final created = json['createdAt'] is int ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int) : DateTime.now();
+    final data = SaveData.fromJson(
+      (json['save'] as Map).cast<String, Object?>(),
+    );
+    final created = json['createdAt'] is int
+        ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
+        : DateTime.now();
     return BackupPayload(
       BackupInfo(
         file: file,
@@ -119,10 +139,20 @@ class SaveStore {
   }
 
   /// Saves a backup into the app's own backups folder and keeps the newest few automatic ones.
-  Future<BackupInfo> writeLocalBackup(SaveData data, DateTime now, {bool automatic = false}) async {
+  Future<BackupInfo> writeLocalBackup(
+    SaveData data,
+    DateTime now, {
+    bool automatic = false,
+  }) async {
     await backupsDir.create(recursive: true);
-    final stamp = '${now.year}${_two(now.month)}${_two(now.day)}-${_two(now.hour)}${_two(now.minute)}${_two(now.second)}';
-    final f = File(p.join(backupsDir.path, '${automatic ? 'auto' : 'manual'}-$stamp.${AppInfo.backupExtension}'));
+    final stamp =
+        '${now.year}${_two(now.month)}${_two(now.day)}-${_two(now.hour)}${_two(now.minute)}${_two(now.second)}';
+    final f = File(
+      p.join(
+        backupsDir.path,
+        '${automatic ? 'auto' : 'manual'}-$stamp.${AppInfo.backupExtension}',
+      ),
+    );
     final bytes = encodeBackup(data, now, automatic: automatic);
     await f.writeAsBytes(bytes, flush: true);
     if (automatic) await _pruneAuto();

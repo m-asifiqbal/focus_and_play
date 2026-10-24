@@ -20,7 +20,10 @@ import 'ad_ids.dart';
 
 class AdService {
   /// Off in tests and on platforms without the plugin.
-  static bool enabled = !kIsWeb && (Platform.isAndroid || Platform.isIOS) && !Platform.environment.containsKey('FLUTTER_TEST');
+  static bool enabled =
+      !kIsWeb &&
+      (Platform.isAndroid || Platform.isIOS) &&
+      !Platform.environment.containsKey('FLUTTER_TEST');
 
   bool _starting = false;
   bool _canRequest = false;
@@ -58,7 +61,9 @@ class AdService {
       await done.future.timeout(const Duration(seconds: 12), onTimeout: () {});
       _canRequest = await ConsentInformation.instance.canRequestAds();
       if (!_canRequest) return;
-      await MobileAds.instance.updateRequestConfiguration(RequestConfiguration(maxAdContentRating: MaxAdContentRating.g));
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(maxAdContentRating: MaxAdContentRating.g),
+      );
       await MobileAds.instance.initialize();
       ready.value = true;
       _loadInterstitial();
@@ -72,7 +77,9 @@ class AdService {
   Future<bool> privacyOptionsRequired() async {
     if (!enabled) return false;
     try {
-      return await ConsentInformation.instance.getPrivacyOptionsRequirementStatus() == PrivacyOptionsRequirementStatus.required;
+      return await ConsentInformation.instance
+              .getPrivacyOptionsRequirementStatus() ==
+          PrivacyOptionsRequirementStatus.required;
     } catch (_) {
       return false;
     }
@@ -209,7 +216,9 @@ class _BannerAdSlotState extends ConsumerState<BannerAdSlot> {
       svc.ready.addListener(retry);
       return;
     }
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width) ?? AdSize.banner;
+    final size =
+        await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width) ??
+        AdSize.banner;
     if (!mounted) return;
     // Take the old banner out of the tree before disposing it (width change).
     final old = _ad;
@@ -250,7 +259,11 @@ class _BannerAdSlotState extends ConsumerState<BannerAdSlot> {
   Widget build(BuildContext context) {
     final h = (_size?.height ?? 50).toDouble();
     if (_loaded && _ad != null) {
-      return SizedBox(width: _size!.width.toDouble(), height: h, child: AdWidget(ad: _ad!));
+      return SizedBox(
+        width: _size!.width.toDouble(),
+        height: h,
+        child: AdWidget(ad: _ad!),
+      );
     }
     final c = context.mi;
     // Placeholder with the ad's footprint (also what tests and the first launch show).
@@ -260,7 +273,10 @@ class _BannerAdSlotState extends ConsumerState<BannerAdSlot> {
         height: h,
         width: 320,
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: c.isNight ? const Color(0xFF1A2740) : c.sunk, borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+          color: c.isNight ? const Color(0xFF1A2740) : c.sunk,
+          borderRadius: BorderRadius.circular(10),
+        ),
         child: Text('Ad', style: MiText.caption.copyWith(color: c.inkSoft)),
       ),
     );

@@ -7,11 +7,15 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 
 import '../../domain/level_config.dart';
+import '../../games/bridges/bridges.dart';
 import '../../games/quilt/quilt.dart';
+import '../../games/sleuth/sleuth.dart';
 import '../../games/sudoku/sudoku.dart';
 import '../../games/thread/thread.dart';
 import '../../games/twist/twist.dart';
+import '../boards/bridges_board.dart';
 import '../boards/quilt_board.dart';
+import '../boards/sleuth_board.dart';
 import '../boards/sudoku_board.dart';
 import '../boards/thread_board.dart';
 import '../boards/twist_board.dart';
@@ -38,6 +42,24 @@ Object generatePuzzle(LevelSpec spec) => switch (spec.knobs) {
   ),
   SudokuKnobs k => SudokuGenerator.generate(
     SudokuParams(givens: k.givens),
+    spec.seed,
+  ),
+  BridgesKnobs k => BridgesGenerator.generate(
+    BridgesParams(
+      rows: k.rows,
+      cols: k.cols,
+      islands: k.islands,
+      doubles: k.doubles,
+    ),
+    spec.seed,
+  ),
+  SleuthKnobs k => SleuthGenerator.generate(
+    SleuthParams(
+      length: k.length,
+      candidates: k.candidates,
+      tries: k.tries,
+      assist: k.assist,
+    ),
     spec.seed,
   ),
   _ => throw ArgumentError('Unknown knobs ${spec.knobs.runtimeType}'),
@@ -95,6 +117,8 @@ BoardController controllerFor(Object puzzle) => switch (puzzle) {
   QuiltPuzzle p => QuiltController(p),
   TwistPuzzle p => TwistController(p),
   SudokuPuzzle p => SudokuController(p),
+  SleuthPuzzle p => SleuthController(p),
+  BridgesPuzzle p => BridgesController(p),
   _ => throw ArgumentError('Unknown puzzle ${puzzle.runtimeType}'),
 };
 
@@ -103,6 +127,8 @@ Widget boardFor(BoardController c, {required int hintsLeft}) => switch (c) {
   QuiltController q => QuiltBoard(controller: q),
   TwistController t => TwistBoard(controller: t),
   SudokuController s => SudokuBoard(controller: s, hintsLeft: hintsLeft),
+  SleuthController s => SleuthBoard(controller: s, hintsLeft: hintsLeft),
+  BridgesController b => BridgesBoard(controller: b),
   _ => const SizedBox.shrink(),
 };
 
@@ -114,5 +140,11 @@ String ruleLine(BoardController c) => switch (c) {
     'Drag to stitch rectangles. Each patch holds exactly one clue.',
   TwistController _ => 'Find every hidden word — each tile is used once.',
   SudokuController _ => 'Each row, column and box holds 1–6 once.',
+  BridgesController _ =>
+    'Give every islet exactly its number of bridges and join them all.',
+  SleuthController c =>
+    c.puzzle.assist
+        ? 'Tap a word, then Guess. Ruled-out words are crossed out for you.'
+        : 'Tap a word, then Guess. Hold a word to cross it out.',
   _ => '',
 };

@@ -188,18 +188,18 @@ class SudokuBoard extends ConsumerWidget {
               final r = i ~/ 6, col = i % 6;
               final v = c.values[i];
               final given = c.isGiven(i);
-              var bg = mi.isNight ? const Color(0xFF16223A) : Colors.white;
+              var bg = mi.isNight ? st.cell : Colors.white;
               if (sel != null &&
                   (r == sel ~/ 6 ||
                       col == sel % 6 ||
                       (r ~/ 2 == sel ~/ 12 && col ~/ 3 == (sel % 6) ~/ 3))) {
                 bg = mi.isNight
-                    ? const Color(0xFF1B3050)
+                    ? Color.lerp(st.cell, st.color, .26)!
                     : const Color(0xFFEAF4FE);
               }
               if (selVal != 0 && v == selVal) {
                 bg = mi.isNight
-                    ? const Color(0xFF22466E)
+                    ? Color.lerp(st.cell, st.color, .5)!
                     : const Color(0xFFCFE5FA);
               }
               if (c.hinted.contains(i)) {
@@ -209,7 +209,7 @@ class SudokuBoard extends ConsumerWidget {
               }
               if (i == sel) {
                 bg = mi.isNight
-                    ? const Color(0xFF2A5A8C)
+                    ? Color.lerp(st.cell, st.color, .72)!
                     : const Color(0xFFBFDDF8);
               }
               final wrong = conflicts.contains(i) && !given;
@@ -298,7 +298,7 @@ class SudokuBoard extends ConsumerWidget {
               final br = b ~/ 2, bc = b % 2;
               return Container(
                 color: mi.isNight
-                    ? const Color(0xFF2A3A57)
+                    ? const Color(0xFF0D1626)
                     : const Color(0xFFB8D3EE),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -341,9 +341,7 @@ class SudokuBoard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      color: mi.isNight
-                          ? const Color(0xFF3B6EA3)
-                          : const Color(0xFF2B5E91),
+                      color: mi.isNight ? st.cellEdge : const Color(0xFF2B5E91),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -408,9 +406,7 @@ class SudokuBoard extends ConsumerWidget {
                               if (c.input(n)) fb.play(Sfx.place, volume: .6);
                             },
                             semanticLabel: 'Enter $n, ${c.remaining(n)} left',
-                            color: mi.isNight
-                                ? const Color(0xFF16223A)
-                                : Colors.white,
+                            color: mi.isNight ? st.cell : Colors.white,
                             ledge: st.cardLedge,
                             radius: 16,
                             height: 64,

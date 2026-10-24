@@ -1,6 +1,6 @@
 # Mind Isles
 
-An offline puzzle game for all ages: four islands, four puzzles, 60 levels each from Easy to Expert, plus a daily puzzle.
+An offline puzzle game for all ages: six islands, six puzzles, 60 levels each from Easy to Expert, plus a daily puzzle.
 
 | Island | Puzzle | Rule |
 |---|---|---|
@@ -8,6 +8,8 @@ An offline puzzle game for all ages: four islands, four puzzles, 60 levels each 
 | Meadow Isle | **Quilt** | Split the field into rectangles; each patch holds one clue (its size or shape). |
 | Crystal Isle | **Twist** | Trace hidden words through neighbouring letter tiles; every tile is used once. |
 | Frost Isle | **Sudoku Six** | 6 × 6 sudoku with 2 × 3 boxes. |
+| Harbor Isle | **Sleuth** | Find the secret word on a themed list: tap words as guesses and read the green / yellow / grey tiles to rule the others out. |
+| Lagoon Isle | **Bridges** | Join numbered islets with 1 or 2 bridges so each gets exactly its number, nothing crosses and everything is connected. |
 
 "Mind Isles" is a working title. It lives in `lib/core/constants/app_info.dart`.
 
@@ -20,7 +22,7 @@ flutter pub get
 flutter run
 ```
 
-Tests (about 120, around 10 s):
+Tests (about 310, around 30 s):
 
 ```
 flutter test --no-pub
@@ -47,7 +49,7 @@ flutter build apk --release --dart-define-from-file=config/admob.json
 
 ```
 lib/
-  games/<thread|quilt|twist|sudoku>/   pure-Dart engines: generator, solver, rules (see docs/engines.md)
+  games/<thread|quilt|twist|sudoku|sleuth|bridges>/   pure-Dart engines: generator, solver, rules (see docs/engines.md)
   domain/                              save model, rules (lives/hints/stars/streak), levels, achievements, insights
   state/save_controller.dart           the one Riverpod Notifier over the save game
   core/                                theme, widgets, storage, ads, reminders, sounds/haptics, router

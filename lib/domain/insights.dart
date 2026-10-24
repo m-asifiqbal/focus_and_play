@@ -31,7 +31,13 @@ class OverviewStats {
     required this.timeByGame,
     required this.solvedByGame,
   });
-  final int solved, solvedAllTime, streak, bestStreak, stars, possibleStars, seconds;
+  final int solved,
+      solvedAllTime,
+      streak,
+      bestStreak,
+      stars,
+      possibleStars,
+      seconds;
 
   /// Solved puzzles for each of the last 7 days, oldest first (index 6 = today).
   final List<int> lastSevenDays;
@@ -107,8 +113,14 @@ abstract final class InsightsCalc {
       possibleStars: solved.length * 3,
       seconds: inP.fold(0, (n, a) => n + a.seconds),
       lastSevenDays: seven,
-      timeByGame: {for (final g in GameId.values) g: inP.where((a) => a.game == g).fold(0, (n, a) => n + a.seconds)},
-      solvedByGame: {for (final g in GameId.values) g: solved.where((a) => a.game == g).length},
+      timeByGame: {
+        for (final g in GameId.values)
+          g: inP.where((a) => a.game == g).fold(0, (n, a) => n + a.seconds),
+      },
+      solvedByGame: {
+        for (final g in GameId.values)
+          g: solved.where((a) => a.game == g).length,
+      },
     );
   }
 
@@ -125,7 +137,10 @@ abstract final class InsightsCalc {
       }
     }
     final island = all.where((a) => a.solved && !a.daily).toList();
-    final trend = [for (final a in island.skip(max(0, island.length - 15))) (a.level, a.seconds)];
+    final trend = [
+      for (final a in island.skip(max(0, island.length - 15)))
+        (a.level, a.seconds),
+    ];
     final heat = List<int>.filled(84, 0);
     for (final a in all.where((a) => a.solved)) {
       final d = daysBetween(DateTime.fromMillisecondsSinceEpoch(a.at), now);
@@ -148,7 +163,9 @@ abstract final class InsightsCalc {
       solvedInPeriod: solvedP.length,
       bestSeconds: best,
       bestLevel: bestLevel,
-      averageSeconds: solvedP.isEmpty ? null : (solvedP.fold(0, (n, a) => n + a.seconds) / solvedP.length).round(),
+      averageSeconds: solvedP.isEmpty
+          ? null
+          : (solvedP.fold(0, (n, a) => n + a.seconds) / solvedP.length).round(),
       stars: prog.stars,
       hints: inP.fold(0, (n, a) => n + a.hints),
       livesLost: inP.fold(0, (n, a) => n + a.livesLost),
@@ -159,7 +176,9 @@ abstract final class InsightsCalc {
           TierRow(
             t,
             prog.levels.keys.where((l) => Levels.tierOf(l) == t).length,
-            prog.levels.entries.where((e) => Levels.tierOf(e.key) == t).fold(0, (n, e) => n + e.value.stars),
+            prog.levels.entries
+                .where((e) => Levels.tierOf(e.key) == t)
+                .fold(0, (n, e) => n + e.value.stars),
             prog.current < t.firstLevel,
           ),
       ],

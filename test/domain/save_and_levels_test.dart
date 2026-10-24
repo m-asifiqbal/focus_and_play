@@ -116,8 +116,8 @@ void main() {
   });
 
   test('the daily puzzle rotates games and is the same all day', () {
-    final days = [for (var i = 0; i < 4; i++) LevelConfig.daily(DateTime(2026, 10, 24 + i)).game];
-    expect(days.toSet().length, 4);
+    final days = [for (var i = 0; i < GameId.values.length; i++) LevelConfig.daily(DateTime(2026, 10, 24 + i)).game];
+    expect(days.toSet().length, GameId.values.length);
     expect(LevelConfig.daily(DateTime(2026, 10, 24, 1)).seed, LevelConfig.daily(DateTime(2026, 10, 24, 23)).seed);
     expect(LevelConfig.daily(DateTime(2026, 10, 24)).dayKey, '2026-10-24');
   });

@@ -19,7 +19,13 @@ enum ThemeChoice { day, night, system }
 
 /// Player profile (no account — lives only on this phone).
 class Profile {
-  const Profile({this.name = '', this.badge = 0, this.onboarded = false, this.firstGame = GameId.thread, this.createdAt = 0});
+  const Profile({
+    this.name = '',
+    this.badge = 0,
+    this.onboarded = false,
+    this.firstGame = GameId.thread,
+    this.createdAt = 0,
+  });
   final String name;
 
   /// Index into the badge list (compass, shell, palm, crystal, snowflake, star).
@@ -28,22 +34,34 @@ class Profile {
   final GameId firstGame;
   final int createdAt;
 
-  Profile copyWith({String? name, int? badge, bool? onboarded, GameId? firstGame, int? createdAt}) => Profile(
-        name: name ?? this.name,
-        badge: badge ?? this.badge,
-        onboarded: onboarded ?? this.onboarded,
-        firstGame: firstGame ?? this.firstGame,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  Profile copyWith({
+    String? name,
+    int? badge,
+    bool? onboarded,
+    GameId? firstGame,
+    int? createdAt,
+  }) => Profile(
+    name: name ?? this.name,
+    badge: badge ?? this.badge,
+    onboarded: onboarded ?? this.onboarded,
+    firstGame: firstGame ?? this.firstGame,
+    createdAt: createdAt ?? this.createdAt,
+  );
 
-  Map<String, Object?> toJson() => {'name': name, 'badge': badge, 'onboarded': onboarded, 'firstGame': firstGame.key, 'createdAt': createdAt};
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'badge': badge,
+    'onboarded': onboarded,
+    'firstGame': firstGame.key,
+    'createdAt': createdAt,
+  };
   factory Profile.fromJson(Map<String, Object?> j) => Profile(
-        name: _v(j, 'name', ''),
-        badge: _v(j, 'badge', 0),
-        onboarded: _v(j, 'onboarded', false),
-        firstGame: GameId.fromKey(_v(j, 'firstGame', 'thread')),
-        createdAt: _v(j, 'createdAt', 0),
-      );
+    name: _v(j, 'name', ''),
+    badge: _v(j, 'badge', 0),
+    onboarded: _v(j, 'onboarded', false),
+    firstGame: GameId.fromKey(_v(j, 'firstGame', 'thread')),
+    createdAt: _v(j, 'createdAt', 0),
+  );
 }
 
 /// Everything on the Settings screen.
@@ -67,7 +85,12 @@ class AppSettings {
   });
 
   final ThemeChoice theme;
-  final bool colourBlind, largeNumbers, relaxed, showClock, markMistakes, confirmHint;
+  final bool colourBlind,
+      largeNumbers,
+      relaxed,
+      showClock,
+      markMistakes,
+      confirmHint;
   final bool sound, haptics, reduceMotion;
   final bool dailyReminder;
 
@@ -93,47 +116,49 @@ class AppSettings {
     bool? livesAlert,
     bool? autoBackup,
     bool? backupWeekly,
-  }) =>
-      AppSettings(
-        theme: theme ?? this.theme,
-        colourBlind: colourBlind ?? this.colourBlind,
-        largeNumbers: largeNumbers ?? this.largeNumbers,
-        relaxed: relaxed ?? this.relaxed,
-        showClock: showClock ?? this.showClock,
-        markMistakes: markMistakes ?? this.markMistakes,
-        confirmHint: confirmHint ?? this.confirmHint,
-        sound: sound ?? this.sound,
-        haptics: haptics ?? this.haptics,
-        reduceMotion: reduceMotion ?? this.reduceMotion,
-        dailyReminder: dailyReminder ?? this.dailyReminder,
-        reminderMinutes: reminderMinutes ?? this.reminderMinutes,
-        livesAlert: livesAlert ?? this.livesAlert,
-        autoBackup: autoBackup ?? this.autoBackup,
-        backupWeekly: backupWeekly ?? this.backupWeekly,
-      );
+  }) => AppSettings(
+    theme: theme ?? this.theme,
+    colourBlind: colourBlind ?? this.colourBlind,
+    largeNumbers: largeNumbers ?? this.largeNumbers,
+    relaxed: relaxed ?? this.relaxed,
+    showClock: showClock ?? this.showClock,
+    markMistakes: markMistakes ?? this.markMistakes,
+    confirmHint: confirmHint ?? this.confirmHint,
+    sound: sound ?? this.sound,
+    haptics: haptics ?? this.haptics,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
+    dailyReminder: dailyReminder ?? this.dailyReminder,
+    reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+    livesAlert: livesAlert ?? this.livesAlert,
+    autoBackup: autoBackup ?? this.autoBackup,
+    backupWeekly: backupWeekly ?? this.backupWeekly,
+  );
 
   Map<String, Object?> toJson() => {
-        'theme': theme.name,
-        'colourBlind': colourBlind,
-        'largeNumbers': largeNumbers,
-        'relaxed': relaxed,
-        'showClock': showClock,
-        'markMistakes': markMistakes,
-        'confirmHint': confirmHint,
-        'sound': sound,
-        'haptics': haptics,
-        'reduceMotion': reduceMotion,
-        'dailyReminder': dailyReminder,
-        'reminderMinutes': reminderMinutes,
-        'livesAlert': livesAlert,
-        'autoBackup': autoBackup,
-        'backupWeekly': backupWeekly,
-      };
+    'theme': theme.name,
+    'colourBlind': colourBlind,
+    'largeNumbers': largeNumbers,
+    'relaxed': relaxed,
+    'showClock': showClock,
+    'markMistakes': markMistakes,
+    'confirmHint': confirmHint,
+    'sound': sound,
+    'haptics': haptics,
+    'reduceMotion': reduceMotion,
+    'dailyReminder': dailyReminder,
+    'reminderMinutes': reminderMinutes,
+    'livesAlert': livesAlert,
+    'autoBackup': autoBackup,
+    'backupWeekly': backupWeekly,
+  };
 
   factory AppSettings.fromJson(Map<String, Object?> j) {
     const d = AppSettings();
     return AppSettings(
-      theme: ThemeChoice.values.firstWhere((t) => t.name == j['theme'], orElse: () => d.theme),
+      theme: ThemeChoice.values.firstWhere(
+        (t) => t.name == j['theme'],
+        orElse: () => d.theme,
+      ),
       colourBlind: _v(j, 'colourBlind', d.colourBlind),
       largeNumbers: _v(j, 'largeNumbers', d.largeNumbers),
       relaxed: _v(j, 'relaxed', d.relaxed),
@@ -154,7 +179,12 @@ class AppSettings {
 
 /// Lives and hints. Lives refill over time; free hints top up once a day.
 class Economy {
-  const Economy({this.lives = Economy.maxLives, this.livesStampMs = 0, this.hints = Economy.dailyFreeHints, this.hintDay = ''});
+  const Economy({
+    this.lives = Economy.maxLives,
+    this.livesStampMs = 0,
+    this.hints = Economy.dailyFreeHints,
+    this.hintDay = '',
+  });
 
   static const maxLives = 3;
   static const refillMinutes = 20;
@@ -171,25 +201,41 @@ class Economy {
   /// yyyy-MM-dd of the last free-hint top-up.
   final String hintDay;
 
-  Economy copyWith({int? lives, int? livesStampMs, int? hints, String? hintDay}) => Economy(
-        lives: lives ?? this.lives,
-        livesStampMs: livesStampMs ?? this.livesStampMs,
-        hints: hints ?? this.hints,
-        hintDay: hintDay ?? this.hintDay,
-      );
+  Economy copyWith({
+    int? lives,
+    int? livesStampMs,
+    int? hints,
+    String? hintDay,
+  }) => Economy(
+    lives: lives ?? this.lives,
+    livesStampMs: livesStampMs ?? this.livesStampMs,
+    hints: hints ?? this.hints,
+    hintDay: hintDay ?? this.hintDay,
+  );
 
-  Map<String, Object?> toJson() => {'lives': lives, 'livesStampMs': livesStampMs, 'hints': hints, 'hintDay': hintDay};
+  Map<String, Object?> toJson() => {
+    'lives': lives,
+    'livesStampMs': livesStampMs,
+    'hints': hints,
+    'hintDay': hintDay,
+  };
   factory Economy.fromJson(Map<String, Object?> j) => Economy(
-        lives: _v(j, 'lives', maxLives),
-        livesStampMs: _v(j, 'livesStampMs', 0),
-        hints: _v(j, 'hints', dailyFreeHints),
-        hintDay: _v(j, 'hintDay', ''),
-      );
+    lives: _v(j, 'lives', maxLives),
+    livesStampMs: _v(j, 'livesStampMs', 0),
+    hints: _v(j, 'hints', dailyFreeHints),
+    hintDay: _v(j, 'hintDay', ''),
+  );
 }
 
 /// Best result on one level.
 class LevelRecord {
-  const LevelRecord({required this.stars, required this.bestSeconds, required this.noHint, required this.solvedAt, this.plays = 1});
+  const LevelRecord({
+    required this.stars,
+    required this.bestSeconds,
+    required this.noHint,
+    required this.solvedAt,
+    this.plays = 1,
+  });
   final int stars;
   final int bestSeconds;
   final bool noHint;
@@ -198,26 +244,38 @@ class LevelRecord {
 
   /// Keeps the best of both results (stars, time, no-hint) and counts the play.
   LevelRecord merge(LevelRecord other) => LevelRecord(
-        stars: other.stars > stars ? other.stars : stars,
-        bestSeconds: other.bestSeconds < bestSeconds ? other.bestSeconds : bestSeconds,
-        noHint: noHint || other.noHint,
-        solvedAt: solvedAt,
-        plays: plays + 1,
-      );
+    stars: other.stars > stars ? other.stars : stars,
+    bestSeconds: other.bestSeconds < bestSeconds
+        ? other.bestSeconds
+        : bestSeconds,
+    noHint: noHint || other.noHint,
+    solvedAt: solvedAt,
+    plays: plays + 1,
+  );
 
-  Map<String, Object?> toJson() => {'s': stars, 't': bestSeconds, 'n': noHint, 'at': solvedAt, 'p': plays};
+  Map<String, Object?> toJson() => {
+    's': stars,
+    't': bestSeconds,
+    'n': noHint,
+    'at': solvedAt,
+    'p': plays,
+  };
   factory LevelRecord.fromJson(Map<String, Object?> j) => LevelRecord(
-        stars: _v(j, 's', 1),
-        bestSeconds: _v(j, 't', 0),
-        noHint: _v(j, 'n', false),
-        solvedAt: _v(j, 'at', 0),
-        plays: _v(j, 'p', 1),
-      );
+    stars: _v(j, 's', 1),
+    bestSeconds: _v(j, 't', 0),
+    noHint: _v(j, 'n', false),
+    solvedAt: _v(j, 'at', 0),
+    plays: _v(j, 'p', 1),
+  );
 }
 
 /// Progress on one island.
 class GameProgress {
-  const GameProgress({this.levels = const {}, this.startLevel = 1, this.chestsOpened = const {}});
+  const GameProgress({
+    this.levels = const {},
+    this.startLevel = 1,
+    this.chestsOpened = const {},
+  });
 
   /// Solved levels only.
   final Map<int, LevelRecord> levels;
@@ -245,23 +303,37 @@ class GameProgress {
   bool get completed => levels.length >= Levels.perIsland - (startLevel - 1);
   int get stars => levels.values.fold(0, (a, r) => a + r.stars);
 
-  GameProgress copyWith({Map<int, LevelRecord>? levels, int? startLevel, Set<int>? chestsOpened}) => GameProgress(
-        levels: levels ?? this.levels,
-        startLevel: startLevel ?? this.startLevel,
-        chestsOpened: chestsOpened ?? this.chestsOpened,
-      );
+  GameProgress copyWith({
+    Map<int, LevelRecord>? levels,
+    int? startLevel,
+    Set<int>? chestsOpened,
+  }) => GameProgress(
+    levels: levels ?? this.levels,
+    startLevel: startLevel ?? this.startLevel,
+    chestsOpened: chestsOpened ?? this.chestsOpened,
+  );
 
   Map<String, Object?> toJson() => {
-        'levels': {for (final e in levels.entries) '${e.key}': e.value.toJson()},
-        'startLevel': startLevel,
-        'chests': chestsOpened.toList()..sort(),
-      };
+    'levels': {for (final e in levels.entries) '${e.key}': e.value.toJson()},
+    'startLevel': startLevel,
+    'chests': chestsOpened.toList()..sort(),
+  };
   factory GameProgress.fromJson(Map<String, Object?> j) {
-    final lv = j['levels'] is Map ? (j['levels'] as Map).cast<String, Object?>() : const <String, Object?>{};
+    final lv = j['levels'] is Map
+        ? (j['levels'] as Map).cast<String, Object?>()
+        : const <String, Object?>{};
     return GameProgress(
-      levels: {for (final e in lv.entries) if (int.tryParse(e.key) != null && e.value is Map) int.parse(e.key): LevelRecord.fromJson((e.value as Map).cast<String, Object?>())},
+      levels: {
+        for (final e in lv.entries)
+          if (int.tryParse(e.key) != null && e.value is Map)
+            int.parse(e.key): LevelRecord.fromJson(
+              (e.value as Map).cast<String, Object?>(),
+            ),
+      },
       startLevel: _v(j, 'startLevel', 1),
-      chestsOpened: (j['chests'] is List ? j['chests'] as List : const []).whereType<int>().toSet(),
+      chestsOpened: (j['chests'] is List ? j['chests'] as List : const [])
+          .whereType<int>()
+          .toSet(),
     );
   }
 }
@@ -291,42 +363,76 @@ class Attempt {
   final int stars;
   final bool daily;
 
-  Map<String, Object?> toJson() => {'g': game.key, 'l': level, 'at': at, 'ok': solved, 't': seconds, 'h': hints, 'x': livesLost, 's': stars, if (daily) 'd': true};
+  Map<String, Object?> toJson() => {
+    'g': game.key,
+    'l': level,
+    'at': at,
+    'ok': solved,
+    't': seconds,
+    'h': hints,
+    'x': livesLost,
+    's': stars,
+    if (daily) 'd': true,
+  };
   factory Attempt.fromJson(Map<String, Object?> j) => Attempt(
-        game: GameId.fromKey(_v(j, 'g', 'thread')),
-        level: _v(j, 'l', 0),
-        at: _v(j, 'at', 0),
-        solved: _v(j, 'ok', false),
-        seconds: _v(j, 't', 0),
-        hints: _v(j, 'h', 0),
-        livesLost: _v(j, 'x', 0),
-        stars: _v(j, 's', 0),
-        daily: _v(j, 'd', false),
-      );
+    game: GameId.fromKey(_v(j, 'g', 'thread')),
+    level: _v(j, 'l', 0),
+    at: _v(j, 'at', 0),
+    solved: _v(j, 'ok', false),
+    seconds: _v(j, 't', 0),
+    hints: _v(j, 'h', 0),
+    livesLost: _v(j, 'x', 0),
+    stars: _v(j, 's', 0),
+    daily: _v(j, 'd', false),
+  );
 }
 
 /// Daily-puzzle result for one day.
 class DailyRecord {
-  const DailyRecord({required this.game, required this.stars, required this.seconds});
+  const DailyRecord({
+    required this.game,
+    required this.stars,
+    required this.seconds,
+  });
   final GameId game;
   final int stars;
   final int seconds;
   Map<String, Object?> toJson() => {'g': game.key, 's': stars, 't': seconds};
-  factory DailyRecord.fromJson(Map<String, Object?> j) => DailyRecord(game: GameId.fromKey(_v(j, 'g', 'thread')), stars: _v(j, 's', 1), seconds: _v(j, 't', 0));
+  factory DailyRecord.fromJson(Map<String, Object?> j) => DailyRecord(
+    game: GameId.fromKey(_v(j, 'g', 'thread')),
+    stars: _v(j, 's', 1),
+    seconds: _v(j, 't', 0),
+  );
 }
 
 /// Interstitial pacing state (persisted so the cap survives restarts).
 class AdPacing {
-  const AdPacing({this.solvedSinceAd = 0, this.lastAdMs = 0, this.sessions = 0});
+  const AdPacing({
+    this.solvedSinceAd = 0,
+    this.lastAdMs = 0,
+    this.sessions = 0,
+  });
   final int solvedSinceAd;
   final int lastAdMs;
 
   /// App launches so far — no interstitials in the very first session.
   final int sessions;
   AdPacing copyWith({int? solvedSinceAd, int? lastAdMs, int? sessions}) =>
-      AdPacing(solvedSinceAd: solvedSinceAd ?? this.solvedSinceAd, lastAdMs: lastAdMs ?? this.lastAdMs, sessions: sessions ?? this.sessions);
-  Map<String, Object?> toJson() => {'solved': solvedSinceAd, 'last': lastAdMs, 'sessions': sessions};
-  factory AdPacing.fromJson(Map<String, Object?> j) => AdPacing(solvedSinceAd: _v(j, 'solved', 0), lastAdMs: _v(j, 'last', 0), sessions: _v(j, 'sessions', 0));
+      AdPacing(
+        solvedSinceAd: solvedSinceAd ?? this.solvedSinceAd,
+        lastAdMs: lastAdMs ?? this.lastAdMs,
+        sessions: sessions ?? this.sessions,
+      );
+  Map<String, Object?> toJson() => {
+    'solved': solvedSinceAd,
+    'last': lastAdMs,
+    'sessions': sessions,
+  };
+  factory AdPacing.fromJson(Map<String, Object?> j) => AdPacing(
+    solvedSinceAd: _v(j, 'solved', 0),
+    lastAdMs: _v(j, 'last', 0),
+    sessions: _v(j, 'sessions', 0),
+  );
 }
 
 /// The whole save game.
@@ -365,7 +471,8 @@ class SaveData {
 
   GameProgress progress(GameId g) => games[g] ?? const GameProgress();
   int get totalStars => games.values.fold(0, (a, g) => a + g.stars);
-  int get totalSolved => games.values.fold(0, (a, g) => a + g.levels.length) + daily.length;
+  int get totalSolved =>
+      games.values.fold(0, (a, g) => a + g.levels.length) + daily.length;
 
   /// Player level from XP: 200 XP per level, starting at level 1.
   int get playerLevel => xp ~/ 200 + 1;
@@ -382,46 +489,63 @@ class SaveData {
     int? xp,
     Set<String>? seenTips,
     AdPacing? ads,
-  }) =>
-      SaveData(
-        profile: profile ?? this.profile,
-        settings: settings ?? this.settings,
-        economy: economy ?? this.economy,
-        games: games ?? this.games,
-        attempts: attempts ?? this.attempts,
-        daily: daily ?? this.daily,
-        achievements: achievements ?? this.achievements,
-        xp: xp ?? this.xp,
-        seenTips: seenTips ?? this.seenTips,
-        ads: ads ?? this.ads,
-      );
+  }) => SaveData(
+    profile: profile ?? this.profile,
+    settings: settings ?? this.settings,
+    economy: economy ?? this.economy,
+    games: games ?? this.games,
+    attempts: attempts ?? this.attempts,
+    daily: daily ?? this.daily,
+    achievements: achievements ?? this.achievements,
+    xp: xp ?? this.xp,
+    seenTips: seenTips ?? this.seenTips,
+    ads: ads ?? this.ads,
+  );
 
   Map<String, Object?> toJson() => {
-        'profile': profile.toJson(),
-        'settings': settings.toJson(),
-        'economy': economy.toJson(),
-        'games': {for (final e in games.entries) e.key.key: e.value.toJson()},
-        'attempts': [for (final a in attempts) a.toJson()],
-        'daily': {for (final e in daily.entries) e.key: e.value.toJson()},
-        'achievements': achievements,
-        'xp': xp,
-        'seenTips': seenTips.toList()..sort(),
-        'ads': ads.toJson(),
-      };
+    'profile': profile.toJson(),
+    'settings': settings.toJson(),
+    'economy': economy.toJson(),
+    'games': {for (final e in games.entries) e.key.key: e.value.toJson()},
+    'attempts': [for (final a in attempts) a.toJson()],
+    'daily': {for (final e in daily.entries) e.key: e.value.toJson()},
+    'achievements': achievements,
+    'xp': xp,
+    'seenTips': seenTips.toList()..sort(),
+    'ads': ads.toJson(),
+  };
 
   factory SaveData.fromJson(Map<String, Object?> j) {
-    Map<String, Object?> m(String k) => j[k] is Map ? (j[k] as Map).cast<String, Object?>() : const {};
-    Map<String, Object?> asMap(Object? v) => v is Map ? v.cast<String, Object?>() : const {};
+    Map<String, Object?> m(String k) =>
+        j[k] is Map ? (j[k] as Map).cast<String, Object?>() : const {};
+    Map<String, Object?> asMap(Object? v) =>
+        v is Map ? v.cast<String, Object?>() : const {};
     return SaveData(
       profile: Profile.fromJson(m('profile')),
       settings: AppSettings.fromJson(m('settings')),
       economy: Economy.fromJson(m('economy')),
-      games: {for (final e in m('games').entries) if (GameId.values.any((g) => g.key == e.key)) GameId.fromKey(e.key): GameProgress.fromJson(asMap(e.value))},
-      attempts: [for (final a in j['attempts'] is List ? j['attempts'] as List : const []) if (a is Map) Attempt.fromJson(asMap(a))],
-      daily: {for (final e in m('daily').entries) if (e.value is Map) e.key: DailyRecord.fromJson(asMap(e.value))},
-      achievements: {for (final e in m('achievements').entries) if (e.value is int) e.key: e.value as int},
+      games: {
+        for (final e in m('games').entries)
+          if (GameId.values.any((g) => g.key == e.key))
+            GameId.fromKey(e.key): GameProgress.fromJson(asMap(e.value)),
+      },
+      attempts: [
+        for (final a
+            in j['attempts'] is List ? j['attempts'] as List : const [])
+          if (a is Map) Attempt.fromJson(asMap(a)),
+      ],
+      daily: {
+        for (final e in m('daily').entries)
+          if (e.value is Map) e.key: DailyRecord.fromJson(asMap(e.value)),
+      },
+      achievements: {
+        for (final e in m('achievements').entries)
+          if (e.value is int) e.key: e.value as int,
+      },
       xp: _v(j, 'xp', 0),
-      seenTips: (j['seenTips'] is List ? j['seenTips'] as List : const []).whereType<String>().toSet(),
+      seenTips: (j['seenTips'] is List ? j['seenTips'] as List : const [])
+          .whereType<String>()
+          .toSet(),
       ads: AdPacing.fromJson(m('ads')),
     );
   }

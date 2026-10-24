@@ -350,6 +350,8 @@ IconData gameIcon(GameId g) => switch (g) {
   GameId.quilt => Icons.grid_view_rounded,
   GameId.twist => Icons.abc_rounded,
   GameId.sudoku => Icons.apps_rounded,
+  GameId.sleuth => Icons.search_rounded,
+  GameId.bridges => Icons.timeline_rounded,
 };
 
 class _Tile extends StatelessWidget {

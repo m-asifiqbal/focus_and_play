@@ -11,11 +11,11 @@ enum Tier {
   expert;
 
   String get label => switch (this) {
-        Tier.easy => 'Easy',
-        Tier.medium => 'Medium',
-        Tier.hard => 'Hard',
-        Tier.expert => 'Expert',
-      };
+    Tier.easy => 'Easy',
+    Tier.medium => 'Medium',
+    Tier.hard => 'Hard',
+    Tier.expert => 'Expert',
+  };
 
   /// 1..4 — drawn as pips next to the tier name.
   int get pips => index + 1;
@@ -30,7 +30,8 @@ abstract final class Levels {
   static const perIsland = 60;
 
   /// Tier of a 1-based level number.
-  static Tier tierOf(int level) => Tier.values[((level - 1) ~/ perTier).clamp(0, 3)];
+  static Tier tierOf(int level) =>
+      Tier.values[((level - 1) ~/ perTier).clamp(0, 3)];
 
   /// 0..1 progress of a level inside its tier, so difficulty ramps smoothly.
   static double rampOf(int level) => ((level - 1) % perTier) / (perTier - 1);

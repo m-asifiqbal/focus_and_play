@@ -162,3 +162,94 @@ class SudokuRules {
   static int? hintCell(SudokuPuzzle p, List<int> values, {int? preferred});
 }
 ```
+
+## Sleuth — `lib/games/sleuth/`
+Wordle-style deduction on a *closed list*: one themed list of same-length words, one of
+them the secret. The player never types — every guess is picked from the list, so the game
+needs no dictionary. Feedback per letter: correct (right place), present (elsewhere),
+absent (duplicates counted like Wordle). The list is drawn from the Twist word bank
+(`kWordThemes`), one theme per puzzle.
+
+```dart
+enum SleuthMark { absent, present, correct }           // index = digit of a base-3 pattern
+class SleuthGuess { final int word; final List<SleuthMark> marks; bool get isCorrect; toJson/fromJson }
+class SleuthPuzzle { final String theme; final int length; final List<String> words; // A–Z, sorted
+  final int secret; final int tries; final bool assist; String get answer; toJson/fromJson }
+
+class SleuthParams { final int length;      // 4..8 (the word bank's range)
+  final int candidates;                     // list size; raised to kSleuthMinCandidates (6), capped by the theme
+  final int tries; final bool assist; }     // assist: the UI may cross out ruled-out words (easy tiers)
+class SleuthGenerator {
+  static SleuthPuzzle generate(SleuthParams p, int seed);
+  static int maxCandidates(int length);     // the real ceiling for `candidates` at that length
+}
+
+class SleuthRules {
+  static List<SleuthMark> score(String guess, String answer);
+  static SleuthGuess guess(SleuthPuzzle p, int wordIndex);
+  /// Words still consistent with ALL the feedback so far (the secret is always among them).
+  static List<int> remaining(SleuthPuzzle p, List<SleuthGuess> history);
+  static bool isSolved(SleuthPuzzle p, List<SleuthGuess> history);
+  /// Hint: the word that minimises the worst-case candidates left (never peeks at the secret).
+  /// -1 when solved or every word was tried.
+  static int bestGuess(SleuthPuzzle p, List<SleuthGuess> history);
+  /// Plays `bestGuess` against the secret; the generator uses it to prove the puzzle is
+  /// solvable within `tries`, and the app reuses it to pick a *new* secret on "Try again".
+  static List<SleuthGuess> greedyRun(SleuthPuzzle p, {int? maxGuesses});
+}
+```
+"Unique" here means the *feedback pins the secret down*: after the hint strategy plays, one
+candidate is left. The generator throws `StateError` if a param set cannot be solved within
+its tries; `lib/domain/level_config.dart` only uses sets the tests prove out. A lost round
+(`tries` used up) is replayed on the same list with another secret — see
+`SleuthController.reset`.
+
+## Bridges — `lib/games/bridges/`
+Numbered islands on a grid (Hashi). Join islands in straight horizontal/vertical lines with
+one or two bridges so each island has exactly its number, no bridge crosses another, and
+all islands form one group. Islands refer to each other by index (row-major), so a puzzle is
+two small lists plus the grid size. Import `bridges.dart` (the barrel) for everything.
+
+```dart
+class BridgesIsland { final int row, col, need; }            // need 1..8
+class BridgesLink   { final int a, b, count; }                // a < b, count 1 or 2
+class BridgesPuzzle { final int rows, cols; final List<BridgesIsland> islands; // row-major
+  final List<BridgesLink> solution;                            // unique, sorted by (a, b)
+  final BridgesGraph graph;   // visible pairs, crossings, per-island pairs (computed once)
+  toJson/fromJson }                                            // constructor sorts + remaps, throws ArgumentError
+
+class BridgesParams { final int rows, cols, islands; final double doubles; }  // doubles = share of 2-bridge links
+class BridgesGenerator { static BridgesPuzzle generate(BridgesParams p, int seed); }
+// If the grid can't hold `islands` (or no unique layout turns up) it asks for one fewer, so
+// compare p.islands.length with the request. ~1 ms for 9×9 / 20 islands on desktop.
+
+class BridgesRules {
+  static List<(int, int)> pairs(BridgesPuzzle p);               // every pair that can be joined
+  static bool cross(BridgesPuzzle p, int a1, int b1, int a2, int b2);
+  static List<int> degrees(BridgesPuzzle p, List<BridgesLink> links);
+  /// A tap on the gap between a and b: 0 → 1 → 2 → 0. Returns the SAME list instance when
+  /// blocked (a crossing bridge is in the way) — the controller turns that into a message.
+  static List<BridgesLink> cycle(BridgesPuzzle p, List<BridgesLink> links, int a, int b);
+  static bool connected(BridgesPuzzle p, List<BridgesLink> links);
+  /// Solved = every island has exactly its number AND all islands are connected.
+  static bool isSolved(BridgesPuzzle p, List<BridgesLink> links);
+  /// Placed links that are not part of the answer (the hint removes these first).
+  static List<BridgesLink> wrongLinks(BridgesPuzzle p, List<BridgesLink> links);
+  /// Next teachable step; `count` is the link's TOTAL (0 = remove a surplus bridge).
+  static BridgesHint? hint(BridgesPuzzle p, List<BridgesLink> links);
+}
+enum BridgesHintKind { onlyNeighbour, fullIsland, forced, solution }
+enum BridgesForcedWhy { neighbours, crossing, cutOff }          // set when kind == forced
+class BridgesHint { final int island, a, b, count; final BridgesHintKind kind; final BridgesForcedWhy? why; }
+class BridgesSolver { static int countSolutions(...); static BridgesSearch search(...); static List<BridgesLink>? solve(...); }
+```
+Uniqueness: every generated puzzle is proven to have one solution by `BridgesSolver`
+(propagation + a deterministic node limit; a hit limit counts as "not unique" and the layout
+is redrawn). The tests check the solver against a brute-force enumerator and every generated
+puzzle against an independent depth-first solver.
+
+Hints reason like a person from the bridges the player already placed (wrong ones are
+ignored): an island with one open neighbour, an island whose need equals what its neighbours
+can take, then degree/crossing and cut-off arguments; only if none fires does it fall back to
+"this bridge is part of the answer". The UI shows it in two steps (spotlight + reason, then
+"Show me" builds it free) — see `lib/features/boards/bridges_controller.dart`.

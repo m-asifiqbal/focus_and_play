@@ -15,7 +15,7 @@ import '../../core/feedback/feedback.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/island_style.dart';
 import '../../core/theme/mi_colors.dart';
-import '../../core/widgets/mi_buttons.dart';
+import '../../core/widgets/mi_banner.dart';
 import '../../domain/game_id.dart';
 import '../../games/quilt/quilt.dart';
 import '../../state/save_controller.dart';
@@ -219,7 +219,7 @@ class _QuiltBoardState extends ConsumerState<QuiltBoard>
                         : const Duration(milliseconds: 180),
                     child: f == null
                         ? const _LegendRow(key: ValueKey('legend'))
-                        : _FaultBanner(
+                        : MiBanner(
                             key: ValueKey(f),
                             text: quiltFaultText(f),
                             onDismiss: c.dismissFault,
@@ -231,54 +231,6 @@ class _QuiltBoardState extends ConsumerState<QuiltBoard>
           ],
         );
       },
-    );
-  }
-}
-
-/// "This patch must be a wide rectangle, not a tall rectangle" with a dismiss ✕.
-class _FaultBanner extends StatelessWidget {
-  const _FaultBanner({super.key, required this.text, required this.onDismiss});
-  final String text;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final mi = context.mi;
-    // A live region announces the message; its children (text and the ✕ button)
-    // stay reachable, so a screen reader can dismiss it.
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsetsDirectional.only(start: 12),
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(mi.danger.withValues(alpha: .12), mi.card),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: mi.danger.withValues(alpha: .6),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline_rounded, size: 20, color: mi.danger),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: MiText.small.copyWith(color: mi.ink, height: 1.25),
-              ),
-            ),
-            MiIconButton(
-              icon: Icons.close_rounded,
-              label: 'Dismiss message',
-              background: Colors.transparent,
-              onTap: onDismiss,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -8,6 +8,7 @@ import 'dart:math';
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/feedback/feedback.dart';
@@ -19,6 +20,7 @@ import '../../games/thread/thread.dart';
 import '../../state/save_controller.dart';
 import '../play/board_controller.dart';
 import 'drag_sampling.dart';
+import 'thread_trail.dart';
 
 class ThreadController extends BoardController {
   ThreadController(this.puzzle);
@@ -155,11 +157,20 @@ class ThreadBoard extends ConsumerStatefulWidget {
 }
 
 class _ThreadBoardState extends ConsumerState<ThreadBoard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1100),
   );
+
+  /// The thread as drawn: eased along the path (see thread_trail.dart).
+  final ThreadTrail _trail = ThreadTrail();
+
+  /// Bumped every frame the thread moves, so only the painter repaints.
+  final ValueNotifier<int> _frame = ValueNotifier(0);
+  late final Ticker _ticker = createTicker(_onTick);
+  Duration _last = Duration.zero;
+
   double _cell = 52;
   Offset? _lastDrag;
 
@@ -170,15 +181,21 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
   @override
   void initState() {
     super.initState();
-    c.addListener(_syncPulse);
+    _trail
+      ..follow(c.path)
+      ..snap();
+    c.addListener(_onController);
   }
 
   @override
   void didUpdateWidget(ThreadBoard old) {
     super.didUpdateWidget(old);
     if (old.controller != widget.controller) {
-      old.controller.removeListener(_syncPulse);
-      widget.controller.addListener(_syncPulse);
+      old.controller.removeListener(_onController);
+      widget.controller.addListener(_onController);
+      _trail
+        ..follow(c.path)
+        ..snap();
     }
   }
 
@@ -186,6 +203,29 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncPulse();
+  }
+
+  /// The real path changed (a drag, undo, hint, reset): glide the drawn thread
+  /// to it, and start or stop the idle pulse.
+  void _onController() {
+    if (!mounted) return;
+    _trail.follow(c.path);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _trail.snap();
+      _frame.value++;
+    } else if (_trail.moving && !_ticker.isActive) {
+      _last = Duration.zero;
+      _ticker.start();
+    }
+    _syncPulse();
+  }
+
+  void _onTick(Duration elapsed) {
+    final dt = ((elapsed - _last).inMicroseconds / 1e6).clamp(0.0, .05);
+    _last = elapsed;
+    final moving = _trail.step(dt);
+    _frame.value++;
+    if (!moving) _ticker.stop();
   }
 
   /// The head pulse and hint dashes only animate while there is something to
@@ -205,7 +245,9 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
 
   @override
   void dispose() {
-    c.removeListener(_syncPulse);
+    c.removeListener(_onController);
+    _ticker.dispose();
+    _frame.dispose();
     for (final t in _labels.values) {
       t.dispose();
     }
@@ -293,7 +335,16 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
                   },
                   child: CustomPaint(
                     size: Size.square(side),
-                    painter: _ThreadPainter(c, st, mi, _pulse, large, _labels),
+                    painter: _ThreadPainter(
+                      c,
+                      st,
+                      mi,
+                      _pulse,
+                      _frame,
+                      _trail,
+                      large,
+                      _labels,
+                    ),
                   ),
                 ),
               ),
@@ -306,12 +357,22 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
 }
 
 class _ThreadPainter extends CustomPainter {
-  _ThreadPainter(this.c, this.st, this.mi, this.pulse, this.large, this.labels)
-    : super(repaint: pulse);
+  _ThreadPainter(
+    this.c,
+    this.st,
+    this.mi,
+    this.pulse,
+    this.frame,
+    this.trail,
+    this.large,
+    this.labels,
+  ) : super(repaint: Listenable.merge([pulse, frame, c]));
   final ThreadController c;
   final IslandStyle st;
   final MiColors mi;
   final Animation<double> pulse;
+  final Listenable frame;
+  final ThreadTrail trail;
   final bool large;
   final Map<String, TextPainter> labels;
 
@@ -322,22 +383,31 @@ class _ThreadPainter extends CustomPainter {
     Offset ctr(int i) =>
         Offset((i % n) * cell + cell / 2, (i ~/ n) * cell + cell / 2);
     final onPath = c.path.toSet();
+    final edge = Paint()
+      ..color = st.cellEdge
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
     for (var i = 0; i < n * n; i++) {
-      final r = Rect.fromLTWH(
-        (i % n) * cell + 2,
-        (i ~/ n) * cell + 2,
-        cell - 4,
-        cell - 4,
+      final r = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          (i % n) * cell + 2,
+          (i ~/ n) * cell + 2,
+          cell - 4,
+          cell - 4,
+        ),
+        Radius.circular(cell * .2),
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(r, Radius.circular(cell * .2)),
+        r,
         Paint()
           ..color = c.hintCells.contains(i)
               ? const Color(0xFFFFE29A)
               : (onPath.contains(i)
-                    ? Color.lerp(st.tint, st.color, .22)!
-                    : st.tint),
+                    ? Color.lerp(st.cell, st.color, .22)!
+                    : st.cell),
       );
+      // At night the fill alone is too close to the board; outline every cell.
+      if (st.isNight && !onPath.contains(i)) canvas.drawRRect(r, edge);
     }
     if (c.hintCells.isNotEmpty && c.path.isNotEmpty) {
       final hp = Path()..moveTo(ctr(c.path.last).dx, ctr(c.path.last).dy);
@@ -357,11 +427,11 @@ class _ThreadPainter extends CustomPainter {
         }
       }
     }
-    if (c.path.isNotEmpty) {
-      final p = Path()..moveTo(ctr(c.path.first).dx, ctr(c.path.first).dy);
-      for (final i in c.path.skip(1)) {
-        p.lineTo(ctr(i).dx, ctr(i).dy);
-      }
+
+    // The thread: eased along the path, with rounded corners.
+    final pts = trail.points(ctr);
+    if (pts.length > 1) {
+      final p = smoothPath(pts, cell * .32);
       canvas.drawPath(
         p,
         Paint()
@@ -380,25 +450,26 @@ class _ThreadPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
-      if (!c.solved) {
-        final head = ctr(c.path.last);
-        final t = pulse.value;
-        canvas.drawCircle(
-          head,
-          cell * (.34 + .3 * t),
-          Paint()..color = st.color.withValues(alpha: .45 * (1 - t)),
-        );
-        canvas.drawCircle(head, cell * .32, Paint()..color = st.color);
-        canvas.drawCircle(
-          head,
-          cell * .32,
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 3,
-        );
-      }
     }
+    if (pts.isNotEmpty && !c.solved) {
+      final head = pts.last;
+      final t = pulse.value;
+      canvas.drawCircle(
+        head,
+        cell * (.34 + .3 * t),
+        Paint()..color = st.color.withValues(alpha: .45 * (1 - t)),
+      );
+      canvas.drawCircle(head, cell * .32, Paint()..color = st.color);
+      canvas.drawCircle(
+        head,
+        cell * .32,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3,
+      );
+    }
+
     final next = ThreadRules.nextNumber(c.puzzle, c.path);
     for (final e in c.puzzle.numbers.entries) {
       final at = ctr(e.key);

@@ -464,7 +464,7 @@ class _TwistBoardState extends ConsumerState<TwistBoard>
       bg = const Color(0xFFFFC233);
       fg = const Color(0xFF13213C);
     } else {
-      bg = mi.isNight ? mi.sunk : Colors.white;
+      bg = mi.isNight ? st.cell : Colors.white;
     }
     final hinted = hintCells[i] ?? false;
     final letter = Stack(
@@ -509,7 +509,12 @@ class _TwistBoardState extends ConsumerState<TwistBoard>
             builder: (context, _) =>
                 box(Color.lerp(mi.sun, mi.sunLedge, _glow.value)!, 3.5),
           )
-        : box(w == null && !traced ? st.cardLedge : Colors.transparent, 2);
+        : box(
+            w == null && !traced
+                ? (mi.isNight ? st.cellEdge : st.cardLedge)
+                : Colors.transparent,
+            2,
+          );
     return AnimatedScale(
       scale: traced ? 1.06 : 1,
       duration: const Duration(milliseconds: 120),
@@ -590,11 +595,16 @@ class _WordSlots extends StatelessWidget {
                           ? (i.isEven ? style.color : style.ledge)
                           : (k < (controller.revealed[i] ?? 0)
                                 ? mi.sunTint
-                                : (mi.isNight ? mi.sunk : Colors.white)),
+                                : (mi.isNight ? style.cell : Colors.white)),
                       borderRadius: BorderRadius.circular(6),
                       border: controller.found.contains(i)
                           ? null
-                          : Border.all(color: style.cardLedge, width: 2),
+                          : Border.all(
+                              color: mi.isNight
+                                  ? style.cellEdge
+                                  : style.cardLedge,
+                              width: 2,
+                            ),
                     ),
                     child:
                         (controller.found.contains(i) ||

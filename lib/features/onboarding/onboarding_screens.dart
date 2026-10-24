@@ -153,7 +153,7 @@ class WelcomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "I'm Pip. Four islands of brain teasers are waiting — from easy beaches to expert peaks. No account, no internet needed.",
+                      "I'm Pip. Six islands of brain teasers are waiting — from easy beaches to expert peaks. No account, no internet needed.",
                       style: MiText.body.copyWith(
                         color: c.inkSoft,
                         fontSize: 17,
@@ -224,13 +224,18 @@ class PickIslandScreen extends ConsumerWidget {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, box) {
+                    // Two columns; as many rows as the islands need.
+                    final rows = (GameId.values.length / 2).ceil();
                     return GridView.count(
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       childAspectRatio:
                           (box.maxWidth / 2 - 6) /
-                          ((box.maxHeight - 12) / 2).clamp(150, 220),
+                          ((box.maxHeight - 12 * (rows - 1)) / rows).clamp(
+                            110,
+                            220,
+                          ),
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
                         for (final g in GameId.values)

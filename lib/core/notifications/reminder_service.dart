@@ -23,7 +23,9 @@ class ReminderService {
   static const _dailyBase = 100;
   static const _livesId = 200;
 
-  static bool get supported => (Platform.isAndroid || Platform.isIOS) && !Platform.environment.containsKey('FLUTTER_TEST');
+  static bool get supported =>
+      (Platform.isAndroid || Platform.isIOS) &&
+      !Platform.environment.containsKey('FLUTTER_TEST');
 
   Future<void> init() async {
     if (!supported || _ready) return;
@@ -37,7 +39,11 @@ class ReminderService {
     final ok = await _plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
       ),
     );
     _ready = ok ?? false;
@@ -48,17 +54,29 @@ class ReminderService {
     await init();
     if (!_ready) return false;
     if (Platform.isAndroid) {
-      final a = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final a = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       return await a?.requestNotificationsPermission() ?? true;
     }
-    final i = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    final i = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     return await i?.requestPermissions(alert: true, sound: true) ?? false;
   }
 
   NotificationDetails get _details => const NotificationDetails(
-        android: AndroidNotificationDetails('reminders', 'Reminders', channelDescription: 'Daily puzzle and lives reminders', importance: Importance.defaultImportance, priority: Priority.defaultPriority),
-        iOS: DarwinNotificationDetails(),
-      );
+    android: AndroidNotificationDetails(
+      'reminders',
+      'Reminders',
+      channelDescription: 'Daily puzzle and lives reminders',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    ),
+    iOS: DarwinNotificationDetails(),
+  );
 
   /// Re-plans every reminder from the current save.
   Future<void> sync(SaveData s, DateTime now) async {
@@ -76,13 +94,25 @@ class ReminderService {
         final at = day.add(Duration(minutes: s.settings.reminderMinutes));
         if (!at.isAfter(now) || (i == 0 && solvedToday)) continue;
         final game = LevelConfig.daily(day).game;
-        await _schedule(_dailyBase + i, at, "Today's puzzle is ${game.title}", s.profile.name.isEmpty ? 'A fresh puzzle is waiting on ${game.island}.' : '${s.profile.name}, a fresh puzzle is waiting on ${game.island}.');
+        await _schedule(
+          _dailyBase + i,
+          at,
+          "Today's puzzle is ${game.title}",
+          s.profile.name.isEmpty
+              ? 'A fresh puzzle is waiting on ${game.island}.'
+              : '${s.profile.name}, a fresh puzzle is waiting on ${game.island}.',
+        );
       }
     }
     if (s.settings.livesAlert && !s.settings.relaxed) {
       final full = EconomyRules.fullAt(s.economy, now);
       if (full != null && full.isAfter(now)) {
-        await _schedule(_livesId, full, 'Your lives are full', 'All three hearts are back. Ready for the next level?');
+        await _schedule(
+          _livesId,
+          full,
+          'Your lives are full',
+          'All three hearts are back. Ready for the next level?',
+        );
       }
     }
   }
@@ -101,4 +131,6 @@ class ReminderService {
   }
 }
 
-final reminderServiceProvider = Provider<ReminderService>((ref) => ReminderService());
+final reminderServiceProvider = Provider<ReminderService>(
+  (ref) => ReminderService(),
+);

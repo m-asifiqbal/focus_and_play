@@ -19,6 +19,7 @@ import '../../core/theme/mi_colors.dart';
 import '../../core/widgets/mi_art.dart';
 import '../../core/widgets/mi_buttons.dart';
 import '../../core/widgets/mi_controls.dart';
+import '../../core/widgets/mi_dialog.dart';
 import '../../domain/level_config.dart';
 import '../../domain/rules.dart';
 import '../../domain/save_data.dart';
@@ -142,8 +143,56 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // The player moved on from a two-step hint (placed, undid, reset…): its card
     // and "Show me" button are stale.
     if (_hintAction != null && !b.hintPending) _clearHint();
-    if (!b.solved) return;
-    _solved();
+    if (b.solved) {
+      _solved();
+      return;
+    }
+    final why = b.failMessage;
+    if (why != null && !_failing) _lostRound(why);
+  }
+
+  bool _failing = false;
+
+  /// The board says the round is lost (Sleuth: every guess used). Costs a life
+  /// like a timeout — never on a replay — then offers another go.
+  Future<void> _lostRound(String why) async {
+    _failing = true;
+    _session.pause();
+    final save = ref.read(saveProvider.notifier);
+    final left = _replay ? save.economyNow.lives : save.loseLife();
+    if (!_replay) _session.livesLost++;
+    ref.read(feedbackProvider)
+      ..thud()
+      ..play(Sfx.lose);
+    if (!_replay && left <= 0) {
+      _session.finish();
+      save.recordFailure(
+        spec,
+        seconds: _session.elapsed,
+        hints: _session.hintsUsed,
+        livesLost: _session.livesLost,
+      );
+      if (mounted) context.pushReplacement(Routes.outOfLives, extra: spec);
+      return;
+    }
+    final again = await showMiConfirm(
+      context,
+      icon: Icons.manage_search_rounded,
+      tone: MiDialogTone.sun,
+      title: 'Out of guesses',
+      message:
+          '$why ${_replay ? '' : 'You lost a life. '}Ready for another go? The list stays, but the secret word changes.',
+      confirmLabel: 'Try again',
+      cancelLabel: 'Leave level',
+    );
+    if (!mounted) return;
+    if (again) {
+      _board?.reset();
+      _failing = false;
+      _session.resume();
+    } else {
+      _leave(confirm: false);
+    }
   }
 
   void _clearHint() {

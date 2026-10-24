@@ -102,20 +102,24 @@ class QuiltPainter extends CustomPainter {
     );
 
     if (w < 1) {
-      final tint = Paint()..color = st.tint.withValues(alpha: 1 - w);
+      final fill = Paint()..color = st.cell.withValues(alpha: 1 - w);
+      final edge = Paint()
+        ..color = st.cellEdge.withValues(alpha: st.cellEdge.a * (1 - w))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6;
       for (var i = 0; i < n * n; i++) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              (i % n) * cell + 2,
-              (i ~/ n) * cell + 2,
-              cell - 4,
-              cell - 4,
-            ),
-            Radius.circular(cell * .2),
+        final r = RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            (i % n) * cell + 2,
+            (i ~/ n) * cell + 2,
+            cell - 4,
+            cell - 4,
           ),
-          tint,
+          Radius.circular(cell * .2),
         );
+        canvas.drawRRect(r, fill);
+        // At night the fill alone is too close to the board; outline each cell.
+        if (st.isNight) canvas.drawRRect(r, edge);
       }
     }
 

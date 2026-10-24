@@ -16,6 +16,7 @@ class IslandStyle {
     required this.onColor,
     required this.page,
     required this.cardLedge,
+    this.isNight = false,
   });
 
   /// Fill for buttons, paths and finished level pads.
@@ -39,20 +40,142 @@ class IslandStyle {
   /// Ledge under white cards on this island's screens.
   final Color cardLedge;
 
-  static IslandStyle of(GameId g, MiColors c) => c.isNight ? _night[g]! : _day[g]!;
+  /// Whether this is the Night set.
+  final bool isNight;
+
+  /// An empty board cell. By day it is the soft [tint]; at night the tint is too
+  /// close to the dark board card to see, so cells are a clearly lighter navy
+  /// with a hint of the island colour.
+  Color get cell =>
+      isNight ? Color.lerp(const Color(0xFF30415F), color, .09)! : tint;
+
+  /// Outline that keeps cells readable at night (nothing by day, where the soft
+  /// fill already stands out from the white card).
+  Color get cellEdge => isNight
+      ? Color.lerp(const Color(0xFF5D7299), color, .30)!
+      : const Color(0x00000000);
+
+  static IslandStyle of(GameId g, MiColors c) =>
+      c.isNight ? _night[g]! : _day[g]!;
 
   static const Map<GameId, IslandStyle> _day = {
-    GameId.thread: IslandStyle(color: Color(0xFFF0582A), ledge: Color(0xFFB93C14), tint: Color(0xFFFFE5D9), ink: Color(0xFF9A3412), onColor: Colors.white, page: Color(0xFFFFF4EE), cardLedge: Color(0xFFF3CDBB)),
-    GameId.quilt: IslandStyle(color: Color(0xFF1F9D55), ledge: Color(0xFF15703B), tint: Color(0xFFDDF5E6), ink: Color(0xFF166534), onColor: Colors.white, page: Color(0xFFF1FAF4), cardLedge: Color(0xFFC7E6D2)),
-    GameId.twist: IslandStyle(color: Color(0xFF8A4FD8), ledge: Color(0xFF6B35C4), tint: Color(0xFFECE6FD), ink: Color(0xFF5B2BA6), onColor: Colors.white, page: Color(0xFFF6F3FF), cardLedge: Color(0xFFD8CEF7)),
-    GameId.sudoku: IslandStyle(color: Color(0xFF1E9BDC), ledge: Color(0xFF1D6BB0), tint: Color(0xFFDCEEFC), ink: Color(0xFF1E4E8C), onColor: Color(0xFF0D1626), page: Color(0xFFF0F7FE), cardLedge: Color(0xFFBFD9F2)),
+    GameId.thread: IslandStyle(
+      color: Color(0xFFF0582A),
+      ledge: Color(0xFFB93C14),
+      tint: Color(0xFFFFE5D9),
+      ink: Color(0xFF9A3412),
+      onColor: Colors.white,
+      page: Color(0xFFFFF4EE),
+      cardLedge: Color(0xFFF3CDBB),
+    ),
+    GameId.quilt: IslandStyle(
+      color: Color(0xFF1F9D55),
+      ledge: Color(0xFF15703B),
+      tint: Color(0xFFDDF5E6),
+      ink: Color(0xFF166534),
+      onColor: Colors.white,
+      page: Color(0xFFF1FAF4),
+      cardLedge: Color(0xFFC7E6D2),
+    ),
+    GameId.twist: IslandStyle(
+      color: Color(0xFF8A4FD8),
+      ledge: Color(0xFF6B35C4),
+      tint: Color(0xFFECE6FD),
+      ink: Color(0xFF5B2BA6),
+      onColor: Colors.white,
+      page: Color(0xFFF6F3FF),
+      cardLedge: Color(0xFFD8CEF7),
+    ),
+    GameId.sleuth: IslandStyle(
+      color: Color(0xFFD81B60),
+      ledge: Color(0xFF9C1346),
+      tint: Color(0xFFFDE4EE),
+      ink: Color(0xFF9D174D),
+      onColor: Colors.white,
+      page: Color(0xFFFFF1F6),
+      cardLedge: Color(0xFFF3C6D6),
+    ),
+    GameId.bridges: IslandStyle(
+      color: Color(0xFF14B8A6),
+      ledge: Color(0xFF0E8577),
+      tint: Color(0xFFD9F5F1),
+      ink: Color(0xFF0F6B61),
+      onColor: Color(0xFF0D1626),
+      page: Color(0xFFEFFAF8),
+      cardLedge: Color(0xFFBFE6E0),
+    ),
+    GameId.sudoku: IslandStyle(
+      color: Color(0xFF1E9BDC),
+      ledge: Color(0xFF1D6BB0),
+      tint: Color(0xFFDCEEFC),
+      ink: Color(0xFF1E4E8C),
+      onColor: Color(0xFF0D1626),
+      page: Color(0xFFF0F7FE),
+      cardLedge: Color(0xFFBFD9F2),
+    ),
   };
 
   static const Map<GameId, IslandStyle> _night = {
-    GameId.thread: IslandStyle(color: Color(0xFFF0582A), ledge: Color(0xFF8E2E10), tint: Color(0xFF3A2219), ink: Color(0xFFFF9A70), onColor: Colors.white, page: Color(0xFF0D1626), cardLedge: Color(0xFF0A1220)),
-    GameId.quilt: IslandStyle(color: Color(0xFF1F9D55), ledge: Color(0xFF0F5A30), tint: Color(0xFF123526), ink: Color(0xFF6FD69A), onColor: Colors.white, page: Color(0xFF0D1626), cardLedge: Color(0xFF0A1220)),
-    GameId.twist: IslandStyle(color: Color(0xFF8A4FD8), ledge: Color(0xFF52279A), tint: Color(0xFF291F4A), ink: Color(0xFFC3A4F5), onColor: Colors.white, page: Color(0xFF0D1626), cardLedge: Color(0xFF0A1220)),
-    GameId.sudoku: IslandStyle(color: Color(0xFF1E9BDC), ledge: Color(0xFF155E8C), tint: Color(0xFF132E49), ink: Color(0xFF7CC4F2), onColor: Color(0xFF0D1626), page: Color(0xFF0D1626), cardLedge: Color(0xFF0A1220)),
+    GameId.thread: IslandStyle(
+      isNight: true,
+      color: Color(0xFFF0582A),
+      ledge: Color(0xFF8E2E10),
+      tint: Color(0xFF3A2219),
+      ink: Color(0xFFFF9A70),
+      onColor: Colors.white,
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
+    GameId.quilt: IslandStyle(
+      isNight: true,
+      color: Color(0xFF1F9D55),
+      ledge: Color(0xFF0F5A30),
+      tint: Color(0xFF123526),
+      ink: Color(0xFF6FD69A),
+      onColor: Colors.white,
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
+    GameId.twist: IslandStyle(
+      isNight: true,
+      color: Color(0xFF8A4FD8),
+      ledge: Color(0xFF52279A),
+      tint: Color(0xFF291F4A),
+      ink: Color(0xFFC3A4F5),
+      onColor: Colors.white,
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
+    GameId.sleuth: IslandStyle(
+      isNight: true,
+      color: Color(0xFFD81B60),
+      ledge: Color(0xFF8E1040),
+      tint: Color(0xFF3A1A28),
+      ink: Color(0xFFF48FB1),
+      onColor: Colors.white,
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
+    GameId.bridges: IslandStyle(
+      isNight: true,
+      color: Color(0xFF14B8A6),
+      ledge: Color(0xFF0E6358),
+      tint: Color(0xFF123F3B),
+      ink: Color(0xFF5EEAD4),
+      onColor: Color(0xFF0D1626),
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
+    GameId.sudoku: IslandStyle(
+      isNight: true,
+      color: Color(0xFF1E9BDC),
+      ledge: Color(0xFF155E8C),
+      tint: Color(0xFF132E49),
+      ink: Color(0xFF7CC4F2),
+      onColor: Color(0xFF0D1626),
+      page: Color(0xFF0D1626),
+      cardLedge: Color(0xFF0A1220),
+    ),
   };
 }
 
