@@ -56,77 +56,87 @@ class HowToPlaySheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.mi;
     final st = context.island(game);
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${game.island.toUpperCase()} · HOW TO PLAY',
-            style: MiText.overline.copyWith(color: st.ink),
-          ),
-          const SizedBox(height: 4),
-          Text(game.title, style: MiText.display.copyWith(color: c.ink)),
-          const SizedBox(height: 14),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: st.tint,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: _Demo(game: game, size: 168),
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (final (i, step) in howToSteps(game).indexed)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    alignment: Alignment.center,
+    // Only the explanation scrolls; the button stays pinned so it is reachable on a
+    // small phone at a large text size (it used to be the last thing in the scroll).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${game.island.toUpperCase()} · HOW TO PLAY',
+                  style: MiText.overline.copyWith(color: st.ink),
+                ),
+                const SizedBox(height: 4),
+                Text(game.title, style: MiText.display.copyWith(color: c.ink)),
+                const SizedBox(height: 14),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: st.color,
-                      shape: BoxShape.circle,
+                      color: st.tint,
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    child: Text(
-                      '${i + 1}',
-                      style: MiText.headline.copyWith(
-                        fontSize: 16,
-                        color: st.onColor,
-                      ),
-                    ),
+                    child: _Demo(game: game, size: 168),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        step,
-                        style: MiText.label.copyWith(
-                          color: c.ink,
-                          fontSize: 16,
+                ),
+                const SizedBox(height: 16),
+                for (final (i, step) in howToSteps(game).indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: st.color,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${i + 1}',
+                            style: MiText.headline.copyWith(
+                              fontSize: 16,
+                              color: st.onColor,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              step,
+                              style: MiText.label.copyWith(
+                                color: c.ink,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-          const SizedBox(height: 6),
-          MiButton(
-            label: "Got it — let's play",
-            color: st.color,
-            ledge: st.ledge,
-            onColor: st.onColor,
-            onTap: () => Navigator.pop(context),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        MiButton(
+          label: "Got it — let's play",
+          color: st.color,
+          ledge: st.ledge,
+          onColor: st.onColor,
+          onTap: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 }
@@ -242,9 +252,9 @@ class _DemoPainter extends CustomPainter {
             ..strokeCap = StrokeCap.round
             ..strokeJoin = StrokeJoin.round,
         );
-        for (final (i, num) in [(0, '1'), (3, '2'), (8, '3')]) {
+        for (final (i, digit) in [(0, '1'), (3, '2'), (8, '3')]) {
           canvas.drawCircle(ctr(i), cell * .24, ink);
-          text(num, ctr(i), Colors.white, cell * .26);
+          text(digit, ctr(i), Colors.white, cell * .26);
         }
       case GameId.quilt:
         final cols = [0xFF9ED9B0, 0xFFFFD68A, 0xFFA9D3F5];
@@ -386,9 +396,13 @@ class _DemoPainter extends CustomPainter {
         }) {
           final q = ((p - from) / (to - from)).clamp(0.0, 1.0);
           if (q <= 0) return;
-          final d = (b - a);
-          final n = Offset(-d.dy, d.dx) / d.distance * gap;
-          canvas.drawLine(a + n, Offset.lerp(a + n, b + n, q)!, wood);
+          final d = b - a;
+          final shift = Offset(-d.dy, d.dx) / d.distance * gap;
+          canvas.drawLine(
+            a + shift,
+            Offset.lerp(a + shift, b + shift, q)!,
+            wood,
+          );
         }
         bridge(ctr(0), ctr(2), 0, .3, gap: -4);
         bridge(ctr(0), ctr(2), .2, .45, gap: 4);
