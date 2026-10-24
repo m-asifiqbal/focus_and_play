@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/island_style.dart';
 import '../../core/theme/mi_colors.dart';
 import '../../core/widgets/pressable.dart';
+import 'board_controller.dart';
 import 'play_session.dart';
 import '../../core/constants/plural.dart';
 
@@ -18,6 +19,7 @@ class PlayHud extends StatelessWidget {
     required this.lives,
     required this.hints,
     required this.style,
+    this.replay = false,
     this.showClock = true,
     this.livesKey,
     this.clockKey,
@@ -26,6 +28,9 @@ class PlayHud extends StatelessWidget {
   final PlaySession session;
   final int lives;
   final int hints;
+
+  /// Replaying a solved level: no lives at stake, so the hearts become a label.
+  final bool replay;
   final IslandStyle style;
   final bool showClock;
   final Key? livesKey, clockKey, hintsKey;
@@ -54,12 +59,14 @@ class PlayHud extends StatelessWidget {
                       child: Semantics(
                         label: session.relaxed
                             ? 'Relaxed mode, no lives'
-                            : '${plural(lives, 'life', 'lives')} left',
+                            : (replay
+                                  ? 'Replay, no lives at stake'
+                                  : '${plural(lives, 'life', 'lives')} left'),
                         excludeSemantics: true,
-                        child: session.relaxed
+                        child: session.relaxed || replay
                             ? Center(
                                 child: Text(
-                                  'Relaxed',
+                                  session.relaxed ? 'Relaxed' : 'Replay',
                                   style: MiText.label.copyWith(
                                     color: c.inkSoft,
                                     fontWeight: FontWeight.w800,
@@ -175,6 +182,74 @@ class PlayHud extends StatelessWidget {
                 ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Chips under the board: Thread's "Next number" and the progress ("20 of 36
+/// squares"). Rebuilds with the board only.
+class BoardStatus extends StatelessWidget {
+  const BoardStatus({super.key, required this.board, required this.style});
+  final BoardController board;
+  final IslandStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.mi;
+    Widget chip(List<Widget> children) => Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    );
+    final text = MiText.small.copyWith(
+      color: c.ink,
+      fontWeight: FontWeight.w800,
+    );
+    return ListenableBuilder(
+      listenable: board,
+      builder: (context, _) {
+        final next = board.nextNumber;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          alignment: WrapAlignment.center,
+          children: [
+            if (next != null)
+              Semantics(
+                label: 'Next number $next',
+                excludeSemantics: true,
+                child: chip([
+                  Container(
+                    width: 22,
+                    height: 22,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: c.navy,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: c.sun, width: 2.5),
+                    ),
+                    child: Text(
+                      '$next',
+                      style: MiText.caption.copyWith(
+                        fontFamily: MiFonts.display,
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text('Next number', style: text),
+                ]),
+              ),
+            chip([Text(board.progressText, style: text)]),
+          ],
         );
       },
     );

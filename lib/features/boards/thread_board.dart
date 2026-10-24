@@ -17,6 +17,7 @@ import '../../domain/game_id.dart';
 import '../../games/thread/thread.dart';
 import '../../state/save_controller.dart';
 import '../play/board_controller.dart';
+import 'drag_sampling.dart';
 
 class ThreadController extends BoardController {
   ThreadController(this.puzzle);
@@ -36,6 +37,12 @@ class ThreadController extends BoardController {
   bool get canUndo => _history.isNotEmpty;
   @override
   String get progressText => '${path.length} of ${puzzle.cellCount} squares';
+  @override
+  int? get nextNumber {
+    if (solved) return null;
+    final n = ThreadRules.nextNumber(puzzle, path);
+    return n > puzzle.maxNumber ? null : n;
+  }
 
   void beginStroke() => _strokeStart = List.of(path);
 
@@ -77,11 +84,19 @@ class ThreadController extends BoardController {
     final hr = head ~/ n, hc = head % n, r = cell ~/ n, c = cell % n;
     final steps = <int>[];
     if (hr == r && hc != c) {
-      for (var k = hc + (c > hc ? 1 : -1); k != c + (c > hc ? 1 : -1); k += c > hc ? 1 : -1) {
+      for (
+        var k = hc + (c > hc ? 1 : -1);
+        k != c + (c > hc ? 1 : -1);
+        k += c > hc ? 1 : -1
+      ) {
         steps.add(r * n + k);
       }
     } else if (hc == c && hr != r) {
-      for (var k = hr + (r > hr ? 1 : -1); k != r + (r > hr ? 1 : -1); k += r > hr ? 1 : -1) {
+      for (
+        var k = hr + (r > hr ? 1 : -1);
+        k != r + (r > hr ? 1 : -1);
+        k += r > hr ? 1 : -1
+      ) {
         steps.add(k * n + c);
       }
     } else {
@@ -109,7 +124,9 @@ class ThreadController extends BoardController {
     if (path.isEmpty) path = [puzzle.cellOf(1)!];
     hintCells = h.next.where((c) => !path.contains(c)).toList();
     notifyListeners();
-    return const HintNote('Follow the glowing squares from the end of your thread.');
+    return const HintNote(
+      'Follow the glowing squares from the end of your thread.',
+    );
   }
 
   @override
@@ -135,19 +152,61 @@ class ThreadBoard extends ConsumerStatefulWidget {
   ConsumerState<ThreadBoard> createState() => _ThreadBoardState();
 }
 
-class _ThreadBoardState extends ConsumerState<ThreadBoard> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
+class _ThreadBoardState extends ConsumerState<ThreadBoard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
   double _cell = 52;
+  Offset? _lastDrag;
+
+  /// Number labels laid out once per size instead of on every animation frame.
+  final Map<String, TextPainter> _labels = {};
   ThreadController get c => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    c.addListener(_syncPulse);
+  }
+
+  @override
+  void didUpdateWidget(ThreadBoard old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_syncPulse);
+      widget.controller.addListener(_syncPulse);
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    MediaQuery.disableAnimationsOf(context) ? _pulse.stop() : _pulse.repeat();
+    _syncPulse();
+  }
+
+  /// The head pulse and hint dashes only animate while there is something to
+  /// show; an untouched or solved board doesn't repaint every frame.
+  void _syncPulse() {
+    if (!mounted) return;
+    final want =
+        !MediaQuery.disableAnimationsOf(context) &&
+        !c.solved &&
+        (c.path.isNotEmpty || c.hintCells.isNotEmpty);
+    if (want && !_pulse.isAnimating) {
+      _pulse.repeat();
+    } else if (!want && _pulse.isAnimating) {
+      _pulse.stop();
+    }
   }
 
   @override
   void dispose() {
+    c.removeListener(_syncPulse);
+    for (final t in _labels.values) {
+      t.dispose();
+    }
     _pulse.dispose();
     super.dispose();
   }
@@ -176,54 +235,99 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard> with SingleTickerProv
     final mi = context.mi;
     final st = context.island(GameId.thread);
     final large = ref.watch(settingsProvider.select((s) => s.largeNumbers));
-    return LayoutBuilder(builder: (context, box) {
-      final side = min(box.maxWidth - 20, 360.0);
-      _cell = side / c.n;
-      return Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: mi.card, borderRadius: BorderRadius.circular(26), boxShadow: [BoxShadow(color: st.cardLedge, offset: const Offset(0, 4))]),
-        child: ListenableBuilder(
-          listenable: c,
-          builder: (context, _) => Semantics(
-            label: 'Thread board, ${c.n} by ${c.n}. ${c.progressText}. Next number ${ThreadRules.nextNumber(c.puzzle, c.path)}.',
-            child: GestureDetector(
-              onPanStart: (d) {
-                c.beginStroke();
-                _move(_cellAt(d.localPosition, strict: false));
-              },
-              onPanUpdate: (d) => _move(_cellAt(d.localPosition)),
-              onPanEnd: (_) => c.endStroke(),
-              onTapUp: (d) {
-                c.beginStroke();
-                _move(_cellAt(d.localPosition, strict: false));
-                c.endStroke();
-              },
-              child: CustomPaint(size: Size.square(side), painter: _ThreadPainter(c, st, mi, _pulse, large)),
+    return LayoutBuilder(
+      builder: (context, box) {
+        final side = min(box.maxWidth - 20, 360.0);
+        _cell = side / c.n;
+        return RepaintBoundary(
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: mi.card,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(color: st.cardLedge, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: ListenableBuilder(
+              listenable: c,
+              builder: (context, _) => Semantics(
+                label:
+                    'Thread board, ${c.n} by ${c.n}. ${c.progressText}. Next number ${ThreadRules.nextNumber(c.puzzle, c.path)}.',
+                child: GestureDetector(
+                  onPanStart: (d) {
+                    c.beginStroke();
+                    _lastDrag = d.localPosition;
+                    _move(_cellAt(d.localPosition, strict: false));
+                  },
+                  // Walk the line since the last update so a fast swipe doesn't skip squares.
+                  onPanUpdate: (d) {
+                    final from = _lastDrag ?? d.localPosition;
+                    _lastDrag = d.localPosition;
+                    for (final p in pointsAlong(
+                      from,
+                      d.localPosition,
+                      _cell / 4,
+                    )) {
+                      _move(_cellAt(p));
+                    }
+                  },
+                  onPanEnd: (_) {
+                    _lastDrag = null;
+                    c.endStroke();
+                  },
+                  onTapUp: (d) {
+                    c.beginStroke();
+                    _move(_cellAt(d.localPosition, strict: false));
+                    c.endStroke();
+                  },
+                  child: CustomPaint(
+                    size: Size.square(side),
+                    painter: _ThreadPainter(c, st, mi, _pulse, large, _labels),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }
 
 class _ThreadPainter extends CustomPainter {
-  _ThreadPainter(this.c, this.st, this.mi, this.pulse, this.large) : super(repaint: pulse);
+  _ThreadPainter(this.c, this.st, this.mi, this.pulse, this.large, this.labels)
+    : super(repaint: pulse);
   final ThreadController c;
   final IslandStyle st;
   final MiColors mi;
   final Animation<double> pulse;
   final bool large;
+  final Map<String, TextPainter> labels;
 
   @override
   void paint(Canvas canvas, Size size) {
     final n = c.n;
     final cell = size.width / n;
-    Offset ctr(int i) => Offset((i % n) * cell + cell / 2, (i ~/ n) * cell + cell / 2);
+    Offset ctr(int i) =>
+        Offset((i % n) * cell + cell / 2, (i ~/ n) * cell + cell / 2);
     final onPath = c.path.toSet();
     for (var i = 0; i < n * n; i++) {
-      final r = Rect.fromLTWH((i % n) * cell + 2, (i ~/ n) * cell + 2, cell - 4, cell - 4);
-      canvas.drawRRect(RRect.fromRectAndRadius(r, Radius.circular(cell * .2)), Paint()..color = c.hintCells.contains(i) ? const Color(0xFFFFE29A) : (onPath.contains(i) ? Color.lerp(st.tint, st.color, .22)! : st.tint));
+      final r = Rect.fromLTWH(
+        (i % n) * cell + 2,
+        (i ~/ n) * cell + 2,
+        cell - 4,
+        cell - 4,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, Radius.circular(cell * .2)),
+        Paint()
+          ..color = c.hintCells.contains(i)
+              ? const Color(0xFFFFE29A)
+              : (onPath.contains(i)
+                    ? Color.lerp(st.tint, st.color, .22)!
+                    : st.tint),
+      );
     }
     if (c.hintCells.isNotEmpty && c.path.isNotEmpty) {
       final hp = Path()..moveTo(ctr(c.path.last).dx, ctr(c.path.last).dy);
@@ -248,27 +352,41 @@ class _ThreadPainter extends CustomPainter {
       for (final i in c.path.skip(1)) {
         p.lineTo(ctr(i).dx, ctr(i).dy);
       }
-      canvas.drawPath(p, Paint()
-        ..color = st.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = cell * .6
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round);
-      canvas.drawPath(p, Paint()
-        ..color = Colors.white.withValues(alpha: .28)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = cell * .14
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round);
+      canvas.drawPath(
+        p,
+        Paint()
+          ..color = st.color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = cell * .6
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.drawPath(
+        p,
+        Paint()
+          ..color = Colors.white.withValues(alpha: .28)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = cell * .14
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
       if (!c.solved) {
         final head = ctr(c.path.last);
         final t = pulse.value;
-        canvas.drawCircle(head, cell * (.34 + .3 * t), Paint()..color = st.color.withValues(alpha: .45 * (1 - t)));
+        canvas.drawCircle(
+          head,
+          cell * (.34 + .3 * t),
+          Paint()..color = st.color.withValues(alpha: .45 * (1 - t)),
+        );
         canvas.drawCircle(head, cell * .32, Paint()..color = st.color);
-        canvas.drawCircle(head, cell * .32, Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3);
+        canvas.drawCircle(
+          head,
+          cell * .32,
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3,
+        );
       }
     }
     final next = ThreadRules.nextNumber(c.puzzle, c.path);
@@ -277,14 +395,30 @@ class _ThreadPainter extends CustomPainter {
       final isNext = e.value == next && !c.solved;
       final r = cell * (isNext ? .36 : .32);
       canvas.drawCircle(at, r, Paint()..color = const Color(0xFF13213C));
-      canvas.drawCircle(at, r, Paint()
-        ..color = isNext ? const Color(0xFFFFC233) : Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = isNext ? 4 : 2.5);
-      final tp = TextPainter(
-        text: TextSpan(text: '${e.value}', style: TextStyle(fontFamily: MiFonts.display, fontWeight: FontWeight.w600, fontSize: cell * (large ? .42 : .36), color: Colors.white)),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      canvas.drawCircle(
+        at,
+        r,
+        Paint()
+          ..color = isNext ? const Color(0xFFFFC233) : Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = isNext ? 4 : 2.5,
+      );
+      final size = cell * (large ? .42 : .36);
+      final tp = labels.putIfAbsent(
+        '${e.value}@${size.toStringAsFixed(1)}',
+        () => TextPainter(
+          text: TextSpan(
+            text: '${e.value}',
+            style: TextStyle(
+              fontFamily: MiFonts.display,
+              fontWeight: FontWeight.w600,
+              fontSize: size,
+              color: Colors.white,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout(),
+      );
       tp.paint(canvas, at - Offset(tp.width / 2, tp.height / 2));
     }
   }

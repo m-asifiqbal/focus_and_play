@@ -22,10 +22,19 @@ class AppShell extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Leave ${AppInfo.name}?', style: MiText.title),
-        content: Text('Your progress is saved.', style: MiText.body.copyWith(color: ctx.mi.inkSoft)),
+        content: Text(
+          'Your progress is saved.',
+          style: MiText.body.copyWith(color: ctx.mi.inkSoft),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Leave')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Leave'),
+          ),
         ],
       ),
     );
@@ -43,15 +52,34 @@ class AppShell extends StatelessWidget {
       child: Scaffold(
         body: shell,
         bottomNavigationBar: Container(
-          decoration: BoxDecoration(color: c.card, border: Border(top: BorderSide(color: c.line))),
+          decoration: BoxDecoration(
+            color: c.card,
+            border: Border(top: BorderSide(color: c.line)),
+          ),
           child: SafeArea(
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Row(children: [
-                for (final (i, icon, label) in const [(0, Icons.home_rounded, 'Home'), (1, Icons.bar_chart_rounded, 'Insights'), (2, Icons.settings_rounded, 'Settings')])
-                  Expanded(child: _Tab(icon: icon, label: label, selected: shell.currentIndex == i, onTap: () => shell.goBranch(i, initialLocation: i == shell.currentIndex))),
-              ]),
+              child: Row(
+                children: [
+                  for (final (i, icon, label) in const [
+                    (0, Icons.home_rounded, 'Home'),
+                    (1, Icons.bar_chart_rounded, 'Insights'),
+                    (2, Icons.settings_rounded, 'Settings'),
+                  ])
+                    Expanded(
+                      child: _Tab(
+                        icon: icon,
+                        label: label,
+                        selected: shell.currentIndex == i,
+                        onTap: () => shell.goBranch(
+                          i,
+                          initialLocation: i == shell.currentIndex,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -61,7 +89,12 @@ class AppShell extends StatelessWidget {
 }
 
 class _Tab extends StatelessWidget {
-  const _Tab({required this.icon, required this.label, required this.selected, required this.onTap});
+  const _Tab({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final bool selected;
@@ -75,20 +108,41 @@ class _Tab extends StatelessWidget {
       selected: selected,
       button: true,
       label: label,
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
+        excludeFromSemantics: true,
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 220),
           height: 54,
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(color: selected ? c.brandTint : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            AnimatedScale(scale: selected ? 1.12 : 1, duration: const Duration(milliseconds: 220), curve: Curves.easeOutBack, child: Icon(icon, color: fg, size: 24)),
-            const SizedBox(height: 2),
-            Text(label, style: MiText.caption.copyWith(color: fg, fontWeight: selected ? FontWeight.w800 : FontWeight.w700)),
-          ]),
+          decoration: BoxDecoration(
+            color: selected ? c.brandTint : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedScale(
+                scale: selected ? 1.12 : 1,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutBack,
+                child: Icon(icon, color: fg, size: 24),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: MiText.caption.copyWith(
+                  color: fg,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

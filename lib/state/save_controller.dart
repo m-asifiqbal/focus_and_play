@@ -17,10 +17,14 @@ import '../domain/save_data.dart';
 import '../domain/tier.dart';
 
 /// Overridden in bootstrap with the opened store.
-final saveStoreProvider = Provider<SaveStore>((ref) => throw UnimplementedError('saveStoreProvider'));
+final saveStoreProvider = Provider<SaveStore>(
+  (ref) => throw UnimplementedError('saveStoreProvider'),
+);
 
 /// Overridden in bootstrap with the loaded (or fresh) save.
-final initialSaveProvider = Provider<SaveData>((ref) => throw UnimplementedError('initialSaveProvider'));
+final initialSaveProvider = Provider<SaveData>(
+  (ref) => throw UnimplementedError('initialSaveProvider'),
+);
 
 /// Injectable clock (tests use a fixed time).
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
@@ -83,23 +87,44 @@ class SaveController extends Notifier<SaveData> {
 
   // ---------- profile, settings, tips ----------
 
-  void completeOnboarding({required String name, required int badge, required GameId firstGame, required bool playedBefore, required bool reminder}) {
+  void completeOnboarding({
+    required String name,
+    required int badge,
+    required GameId firstGame,
+    required bool playedBefore,
+    required bool reminder,
+  }) {
     final games = Map<GameId, GameProgress>.of(state.games);
     if (playedBefore) {
       for (final g in GameId.values) {
-        games[g] = (games[g] ?? const GameProgress()).copyWith(startLevel: Tier.medium.firstLevel);
+        games[g] = (games[g] ?? const GameProgress()).copyWith(
+          startLevel: Tier.medium.firstLevel,
+        );
       }
     }
-    _set(state.copyWith(
-      profile: state.profile.copyWith(name: name.trim(), badge: badge, onboarded: true, firstGame: firstGame, createdAt: _now.millisecondsSinceEpoch),
-      settings: state.settings.copyWith(dailyReminder: reminder),
-      games: games,
-    ));
+    _set(
+      state.copyWith(
+        profile: state.profile.copyWith(
+          name: name.trim(),
+          badge: badge,
+          onboarded: true,
+          firstGame: firstGame,
+          createdAt: _now.millisecondsSinceEpoch,
+        ),
+        settings: state.settings.copyWith(dailyReminder: reminder),
+        games: games,
+      ),
+    );
   }
 
-  void updateProfile({String? name, int? badge}) => _set(state.copyWith(profile: state.profile.copyWith(name: name?.trim(), badge: badge)));
+  void updateProfile({String? name, int? badge}) => _set(
+    state.copyWith(
+      profile: state.profile.copyWith(name: name?.trim(), badge: badge),
+    ),
+  );
 
-  void updateSettings(AppSettings Function(AppSettings s) change) => _set(state.copyWith(settings: change(state.settings)));
+  void updateSettings(AppSettings Function(AppSettings s) change) =>
+      _set(state.copyWith(settings: change(state.settings)));
 
   void markTipSeen(String id) {
     if (state.seenTips.contains(id)) return;
@@ -107,7 +132,9 @@ class SaveController extends Notifier<SaveData> {
   }
 
   /// Starts a new app session (interstitial pacing skips the very first one).
-  void countSession() => _set(state.copyWith(ads: state.ads.copyWith(sessions: state.ads.sessions + 1)));
+  void countSession() => _set(
+    state.copyWith(ads: state.ads.copyWith(sessions: state.ads.sessions + 1)),
+  );
 
   // ---------- lives & hints ----------
 
@@ -117,7 +144,10 @@ class SaveController extends Notifier<SaveData> {
   /// Persists refills and the daily free hints (on launch, resume and before play).
   void normaliseEconomy() {
     final n = economyNow;
-    if (n.lives != state.economy.lives || n.hints != state.economy.hints || n.hintDay != state.economy.hintDay || n.livesStampMs != state.economy.livesStampMs) {
+    if (n.lives != state.economy.lives ||
+        n.hints != state.economy.hints ||
+        n.hintDay != state.economy.hintDay ||
+        n.livesStampMs != state.economy.livesStampMs) {
       _set(state.copyWith(economy: n));
     }
   }
@@ -129,9 +159,11 @@ class SaveController extends Notifier<SaveData> {
     return e.lives;
   }
 
-  void addLife() => _set(state.copyWith(economy: EconomyRules.addLife(state.economy, _now)));
+  void addLife() =>
+      _set(state.copyWith(economy: EconomyRules.addLife(state.economy, _now)));
 
-  void addHints(int n) => _set(state.copyWith(economy: EconomyRules.addHints(economyNow, n)));
+  void addHints(int n) =>
+      _set(state.copyWith(economy: EconomyRules.addHints(economyNow, n)));
 
   /// Spends a hint; false when none are left.
   bool spendHint() {
@@ -145,14 +177,26 @@ class SaveController extends Notifier<SaveData> {
 
   List<Attempt> _withAttempt(Attempt a) {
     final list = [...state.attempts, a];
-    return list.length > SaveData.maxAttempts ? list.sublist(list.length - SaveData.maxAttempts) : list;
+    return list.length > SaveData.maxAttempts
+        ? list.sublist(list.length - SaveData.maxAttempts)
+        : list;
   }
 
   /// Records a solved level (or daily) and returns everything the celebration needs.
-  LevelOutcome recordSolve(LevelSpec spec, {required int seconds, required int hints, required int livesLost}) {
+  LevelOutcome recordSolve(
+    LevelSpec spec, {
+    required int seconds,
+    required int hints,
+    required int livesLost,
+  }) {
     final now = _now;
     final relaxed = state.settings.relaxed;
-    final stars = ScoreRules.stars(relaxed: relaxed, seconds: seconds, par: spec.parSeconds, hints: hints);
+    final stars = ScoreRules.stars(
+      relaxed: relaxed,
+      seconds: seconds,
+      par: spec.parSeconds,
+      hints: hints,
+    );
     var next = state;
     var firstSolve = true;
     int? previousBest;
@@ -164,47 +208,86 @@ class SaveController extends Notifier<SaveData> {
       final prev = next.daily[key];
       firstSolve = prev == null;
       previousBest = prev?.seconds;
-      final rec = DailyRecord(game: spec.game, stars: prev == null || stars > prev.stars ? stars : prev.stars, seconds: prev == null || seconds < prev.seconds ? seconds : prev.seconds);
+      final rec = DailyRecord(
+        game: spec.game,
+        stars: prev == null || stars > prev.stars ? stars : prev.stars,
+        seconds: prev == null || seconds < prev.seconds
+            ? seconds
+            : prev.seconds,
+      );
       next = next.copyWith(daily: {...next.daily, key: rec});
     } else {
       final prog = next.progress(spec.game);
       final prev = prog.levels[spec.level];
       firstSolve = prev == null;
       previousBest = prev?.bestSeconds;
-      final rec = LevelRecord(stars: stars, bestSeconds: seconds, noHint: hints == 0, solvedAt: now.millisecondsSinceEpoch);
-      var updated = prog.copyWith(levels: {...prog.levels, spec.level: prev == null ? rec : prev.merge(rec)});
-      if (Levels.isGate(spec.level) && !prog.chestsOpened.contains(spec.level)) {
+      final rec = LevelRecord(
+        stars: stars,
+        bestSeconds: seconds,
+        noHint: hints == 0,
+        solvedAt: now.millisecondsSinceEpoch,
+      );
+      var updated = prog.copyWith(
+        levels: {
+          ...prog.levels,
+          spec.level: prev == null ? rec : prev.merge(rec),
+        },
+      );
+      if (Levels.isGate(spec.level) &&
+          !prog.chestsOpened.contains(spec.level)) {
         chestHints = ScoreRules.chestHints(spec.tier);
-        updated = updated.copyWith(chestsOpened: {...prog.chestsOpened, spec.level});
+        updated = updated.copyWith(
+          chestsOpened: {...prog.chestsOpened, spec.level},
+        );
         tierCleared = spec.tier;
       }
       next = next.copyWith(games: {...next.games, spec.game: updated});
     }
 
-    final xp = ScoreRules.xp(stars: stars, tier: spec.tier, daily: spec.isDaily, firstSolve: firstSolve);
+    final xp = ScoreRules.xp(
+      stars: stars,
+      tier: spec.tier,
+      daily: spec.isDaily,
+      firstSolve: firstSolve,
+    );
     next = next.copyWith(
       xp: next.xp + xp,
-      attempts: _withAttempt(Attempt(
-        game: spec.game,
-        level: spec.level,
-        at: now.millisecondsSinceEpoch,
-        solved: true,
-        seconds: seconds,
-        hints: hints,
-        livesLost: livesLost,
-        stars: stars,
-        daily: spec.isDaily,
-      )),
+      attempts: _withAttempt(
+        Attempt(
+          game: spec.game,
+          level: spec.level,
+          at: now.millisecondsSinceEpoch,
+          solved: true,
+          seconds: seconds,
+          hints: hints,
+          livesLost: livesLost,
+          stars: stars,
+          daily: spec.isDaily,
+        ),
+      ),
       ads: next.ads.copyWith(solvedSinceAd: next.ads.solvedSinceAd + 1),
     );
-    if (chestHints > 0) next = next.copyWith(economy: EconomyRules.addHints(EconomyRules.normalise(next.economy, now), chestHints));
+    if (chestHints > 0) {
+      next = next.copyWith(
+        economy: EconomyRules.addHints(
+          EconomyRules.normalise(next.economy, now),
+          chestHints,
+        ),
+      );
+    }
 
     final reached = Achievements.newlyReached(next);
     if (reached.isNotEmpty) {
       final rewards = reached.fold(0, (n, d) => n + d.rewardHints);
       next = next.copyWith(
-        achievements: {...next.achievements, for (final d in reached) d.id: now.millisecondsSinceEpoch},
-        economy: EconomyRules.addHints(EconomyRules.normalise(next.economy, now), rewards),
+        achievements: {
+          ...next.achievements,
+          for (final d in reached) d.id: now.millisecondsSinceEpoch,
+        },
+        economy: EconomyRules.addHints(
+          EconomyRules.normalise(next.economy, now),
+          rewards,
+        ),
       );
     }
     _set(next);
@@ -226,20 +309,29 @@ class SaveController extends Notifier<SaveData> {
   }
 
   /// Records an attempt that ended without a solve (out of lives or quit after playing).
-  void recordFailure(LevelSpec spec, {required int seconds, required int hints, required int livesLost}) {
+  void recordFailure(
+    LevelSpec spec, {
+    required int seconds,
+    required int hints,
+    required int livesLost,
+  }) {
     if (seconds <= 0 && hints == 0 && livesLost == 0) return;
-    _set(state.copyWith(
-      attempts: _withAttempt(Attempt(
-        game: spec.game,
-        level: spec.level,
-        at: _now.millisecondsSinceEpoch,
-        solved: false,
-        seconds: seconds,
-        hints: hints,
-        livesLost: livesLost,
-        daily: spec.isDaily,
-      )),
-    ));
+    _set(
+      state.copyWith(
+        attempts: _withAttempt(
+          Attempt(
+            game: spec.game,
+            level: spec.level,
+            at: _now.millisecondsSinceEpoch,
+            solved: false,
+            seconds: seconds,
+            hints: hints,
+            livesLost: livesLost,
+            daily: spec.isDaily,
+          ),
+        ),
+      ),
+    );
   }
 
   // ---------- ads pacing ----------
@@ -253,31 +345,69 @@ class SaveController extends Notifier<SaveData> {
     return _now.millisecondsSinceEpoch - a.lastAdMs >= 4 * 60 * 1000;
   }
 
-  void markInterstitialShown() => _set(state.copyWith(ads: state.ads.copyWith(solvedSinceAd: 0, lastAdMs: _now.millisecondsSinceEpoch)));
+  void markInterstitialShown() => _set(
+    state.copyWith(
+      ads: state.ads.copyWith(
+        solvedSinceAd: 0,
+        lastAdMs: _now.millisecondsSinceEpoch,
+      ),
+    ),
+  );
 
   // ---------- restore ----------
 
   /// Replaces everything with a restored backup (keeps this phone's ad pacing).
   Future<void> replaceAll(SaveData restored) async {
-    _set(restored.copyWith(ads: state.ads, profile: restored.profile.copyWith(onboarded: true)));
+    _set(
+      restored.copyWith(
+        ads: state.ads,
+        profile: restored.profile.copyWith(onboarded: true),
+      ),
+    );
     await flush();
   }
 
   /// Wipes progress but keeps settings and the profile (Settings › Reset all progress).
   Future<void> resetProgress() async {
-    _set(SaveData(profile: state.profile, settings: state.settings, ads: state.ads, seenTips: state.seenTips));
+    _set(
+      SaveData(
+        profile: state.profile,
+        settings: state.settings,
+        ads: state.ads,
+        seenTips: state.seenTips,
+      ),
+    );
     await flush();
   }
 }
 
-final saveProvider = NotifierProvider<SaveController, SaveData>(SaveController.new);
+final saveProvider = NotifierProvider<SaveController, SaveData>(
+  SaveController.new,
+);
 
-final settingsProvider = Provider<AppSettings>((ref) => ref.watch(saveProvider.select((s) => s.settings)));
+final settingsProvider = Provider<AppSettings>(
+  (ref) => ref.watch(saveProvider.select((s) => s.settings)),
+);
 
 /// Emits every second while watched — drives countdowns (lives refill, daily reset).
 final secondTickerProvider = StreamProvider.autoDispose<DateTime>((ref) {
   final clock = ref.watch(clockProvider);
   return Stream.periodic(const Duration(seconds: 1), (_) => clock());
+});
+
+/// Today's local date. Rebuilds its watchers only when the day changes, not
+/// every second like [secondTickerProvider].
+final todayProvider = Provider.autoDispose<DateTime>((ref) {
+  ref.watch(secondTickerProvider.select((t) => t.whenData(dayKey).value));
+  return dayStart(ref.read(clockProvider)());
+});
+
+/// Local days with at least one solve. Recomputed only when attempts or daily
+/// results change (scanning up to 3000 attempts every second was wasteful).
+final solvedDaysProvider = Provider<Set<String>>((ref) {
+  ref.watch(saveProvider.select((s) => s.attempts));
+  ref.watch(saveProvider.select((s) => s.daily));
+  return StreakRules.solvedDays(ref.read(saveProvider));
 });
 
 /// Lives and hints right now, refreshed every second where watched.

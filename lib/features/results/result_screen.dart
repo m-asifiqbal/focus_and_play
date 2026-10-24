@@ -21,7 +21,9 @@ import '../../core/widgets/pressable.dart';
 import '../../domain/achievements.dart';
 import '../../domain/tier.dart';
 import '../../state/save_controller.dart';
+import '../../domain/level_config.dart';
 import '../play/play_hud.dart' show clockText;
+import '../play/puzzle_factory.dart';
 import 'achievement_dialog.dart';
 import 'result_flow.dart';
 import '../../core/constants/plural.dart';
@@ -47,6 +49,10 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
   @override
   void initState() {
     super.initState();
+    // Build the next level during the celebration so "Next level" is instant.
+    if (!o.spec.isDaily && o.spec.level < Levels.perIsland) {
+      prefetchPuzzle(LevelConfig.forLevel(o.spec.game, o.spec.level + 1));
+    }
     final fb = ref.read(feedbackProvider);
     for (var i = 0; i < o.stars; i++) {
       Future<void>.delayed(Duration(milliseconds: 250 + i * 300), () {
@@ -54,7 +60,10 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
       });
     }
     if (o.chestHints > 0) {
-      Future<void>.delayed(const Duration(milliseconds: 1400), () => fb.play(Sfx.chest));
+      Future<void>.delayed(
+        const Duration(milliseconds: 1400),
+        () => fb.play(Sfx.chest),
+      );
     }
     if (o.newAchievements.isNotEmpty) {
       Future<void>.delayed(const Duration(milliseconds: 1700), () async {

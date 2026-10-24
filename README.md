@@ -36,7 +36,8 @@ flutter build apk --release --dart-define-from-file=config/admob.json
 
 ## How it plays
 
-- **Lives and clock**: 3 lives, shared across islands. Each life has its own clock. When it runs out you lose a life, keep your board and get a fresh clock. One life refills every 20 minutes.
+- **Lives and clock**: 3 lives, shared across islands. Each life has its own clock. When it runs out you lose a life, keep your board and get a fresh clock. One life refills every 20 minutes. Replaying a level you already solved (or today's daily again) never costs a life, so it works with no lives left.
+- **Twist's free letter**: the first word starts with its first letter showing, and every word you find reveals the first letter of the next one (shortest first). It isn't a hint and doesn't cost the no-hint star.
 - **Hints**: 3 free a day, plus rewards from chests, achievements and rewarded ads. A hint never costs a life, only the "no hints" star.
 - **Stars**: solve (1) + beat par (2) + no hints (3). Relaxed mode (Settings) turns off the clock and lives and caps each level at one star.
 - **Tiers**: Easy 1–15, Medium 16–30, Hard 31–45, Expert 46–60. The last level of each tier opens a chest of hints.

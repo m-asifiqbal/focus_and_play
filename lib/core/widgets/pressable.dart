@@ -70,31 +70,39 @@ class _MiPressableState extends ConsumerState<MiPressable> {
         color: widget.color,
         borderRadius: BorderRadius.circular(widget.radius),
         border: widget.border,
-        boxShadow: widget.ledge == null || pressed ? const [] : [BoxShadow(color: widget.ledge!, offset: Offset(0, ledgeH))],
+        boxShadow: widget.ledge == null || pressed
+            ? const []
+            : [BoxShadow(color: widget.ledge!, offset: Offset(0, ledgeH))],
       ),
       child: widget.child,
     );
+    final VoidCallback? tap = enabled
+        ? () {
+            final fb = ref.read(feedbackProvider);
+            fb.tick();
+            if (widget.sound) fb.play(Sfx.tap, volume: .5);
+            widget.onTap!();
+          }
+        : null;
+    // The tap lives on this semantics node (not only on the GestureDetector):
+    // excludeSemantics drops the children's actions, and screen readers need a
+    // tap action to activate the control.
     return Semantics(
       button: true,
       enabled: enabled,
       selected: widget.selected,
       label: widget.semanticLabel,
+      onTap: tap,
       excludeSemantics: widget.semanticLabel != null,
       child: Padding(
         padding: EdgeInsets.only(bottom: ledgeH),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
           onTapDown: (_) => _set(true),
           onTapUp: (_) => _set(false),
           onTapCancel: () => _set(false),
-          onTap: enabled
-              ? () {
-                  final fb = ref.read(feedbackProvider);
-                  fb.tick();
-                  if (widget.sound) fb.play(Sfx.tap, volume: .5);
-                  widget.onTap!();
-                }
-              : null,
+          onTap: tap,
           child: Opacity(opacity: enabled ? 1 : .5, child: body),
         ),
       ),

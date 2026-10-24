@@ -13,13 +13,30 @@ import '../../core/widgets/mi_controls.dart';
 import '../../domain/game_id.dart';
 
 List<String> howToSteps(GameId g) => switch (g) {
-      GameId.thread => ['Drag from 1 to start your thread.', 'Pass the numbers in order — 1, 2, 3 and on.', 'Fill every square to finish. Slide back along the thread to undo.'],
-      GameId.quilt => ['Drag across squares to stitch a rectangle patch.', 'Each patch holds exactly one clue: its size, or its shape (square, tall or wide).', 'Cover the whole field. Tap a patch to unpick it.'],
-      GameId.twist => ['Drag across neighbouring tiles to spell a word.', 'Every hidden word fits the theme, and every tile is used once.', 'Find all the words to finish. The slots show how long each one is.'],
-      GameId.sudoku => ['Tap a square, then tap a number.', 'Each row, each column and each 2 × 3 box holds 1 to 6 exactly once.', 'Turn on Notes to pencil in ideas.'],
-    };
+  GameId.thread => [
+    'Drag from 1 to start your thread.',
+    'Pass the numbers in order — 1, 2, 3 and on.',
+    'Fill every square to finish. Slide back along the thread to undo.',
+  ],
+  GameId.quilt => [
+    'Drag across squares to stitch a rectangle patch.',
+    'Each patch holds exactly one clue: its size, or its shape (square, tall or wide).',
+    'Cover the whole field. Tap a patch to unpick it.',
+  ],
+  GameId.twist => [
+    'Drag across neighbouring tiles to spell a word.',
+    'Every hidden word fits the theme, and every tile is used once.',
+    'The slots show how long each word is. The first word\'s first letter is lit, and every word you find lights up the next one\'s.',
+  ],
+  GameId.sudoku => [
+    'Tap a square, then tap a number.',
+    'Each row, each column and each 2 × 3 box holds 1 to 6 exactly once.',
+    'Turn on Notes to pencil in ideas.',
+  ],
+};
 
-Future<void> showHowToPlay(BuildContext context, GameId game) => showMiSheet<void>(context, builder: (_) => HowToPlaySheet(game: game));
+Future<void> showHowToPlay(BuildContext context, GameId game) =>
+    showMiSheet<void>(context, builder: (_) => HowToPlaySheet(game: game));
 
 class HowToPlaySheet extends StatelessWidget {
   const HowToPlaySheet({super.key, required this.game});
@@ -30,37 +47,76 @@ class HowToPlaySheet extends StatelessWidget {
     final c = context.mi;
     final st = context.island(game);
     return SingleChildScrollView(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-        Text('${game.island.toUpperCase()} · HOW TO PLAY', style: MiText.overline.copyWith(color: st.ink)),
-        const SizedBox(height: 4),
-        Text(game.title, style: MiText.display.copyWith(color: c.ink)),
-        const SizedBox(height: 14),
-        Center(
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: st.tint, borderRadius: BorderRadius.circular(24)),
-            child: _Demo(game: game, size: 168),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${game.island.toUpperCase()} · HOW TO PLAY',
+            style: MiText.overline.copyWith(color: st.ink),
           ),
-        ),
-        const SizedBox(height: 16),
-        for (final (i, step) in howToSteps(game).indexed)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(
-                width: 30,
-                height: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: st.color, shape: BoxShape.circle),
-                child: Text('${i + 1}', style: MiText.headline.copyWith(fontSize: 16, color: st.onColor)),
+          const SizedBox(height: 4),
+          Text(game.title, style: MiText.display.copyWith(color: c.ink)),
+          const SizedBox(height: 14),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: st.tint,
+                borderRadius: BorderRadius.circular(24),
               ),
-              const SizedBox(width: 12),
-              Expanded(child: Padding(padding: const EdgeInsets.only(top: 4), child: Text(step, style: MiText.label.copyWith(color: c.ink, fontSize: 16)))),
-            ]),
+              child: _Demo(game: game, size: 168),
+            ),
           ),
-        const SizedBox(height: 6),
-        MiButton(label: "Got it — let's play", color: st.color, ledge: st.ledge, onColor: st.onColor, onTap: () => Navigator.pop(context)),
-      ]),
+          const SizedBox(height: 16),
+          for (final (i, step) in howToSteps(game).indexed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: st.color,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: MiText.headline.copyWith(
+                        fontSize: 16,
+                        color: st.onColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        step,
+                        style: MiText.label.copyWith(
+                          color: c.ink,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 6),
+          MiButton(
+            label: "Got it — let's play",
+            color: st.color,
+            ledge: st.ledge,
+            onColor: st.onColor,
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -75,7 +131,10 @@ class _Demo extends StatefulWidget {
 }
 
 class _DemoState extends State<_Demo> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 3600));
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 3600),
+  );
 
   @override
   void didChangeDependencies() {
@@ -95,8 +154,15 @@ class _DemoState extends State<_Demo> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: CustomPaint(size: Size.square(widget.size), painter: _DemoPainter(widget.game, _c, IslandStyle.of(widget.game, context.mi))),
-      );
+    child: CustomPaint(
+      size: Size.square(widget.size),
+      painter: _DemoPainter(
+        widget.game,
+        _c,
+        IslandStyle.of(widget.game, context.mi),
+      ),
+    ),
+  );
 }
 
 class _DemoPainter extends CustomPainter {
@@ -110,15 +176,35 @@ class _DemoPainter extends CustomPainter {
     final n = game == GameId.sudoku ? 4 : 3;
     final cell = size.width / n;
     final p = min(1.0, t.value / .75);
-    Offset ctr(int i) => Offset((i % n) * cell + cell / 2, (i ~/ n) * cell + cell / 2);
+    Offset ctr(int i) =>
+        Offset((i % n) * cell + cell / 2, (i ~/ n) * cell + cell / 2);
     for (var i = 0; i < n * n; i++) {
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH((i % n) * cell + 3, (i ~/ n) * cell + 3, cell - 6, cell - 6), const Radius.circular(12)), Paint()..color = Colors.white);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            (i % n) * cell + 3,
+            (i ~/ n) * cell + 3,
+            cell - 6,
+            cell - 6,
+          ),
+          const Radius.circular(12),
+        ),
+        Paint()..color = Colors.white,
+      );
     }
     final ink = Paint()..color = const Color(0xFF13213C);
     TextPainter label(String s, Color c, double fs) => TextPainter(
-          text: TextSpan(text: s, style: TextStyle(fontFamily: MiFonts.display, fontSize: fs, fontWeight: FontWeight.w600, color: c)),
-          textDirection: TextDirection.ltr,
-        )..layout();
+      text: TextSpan(
+        text: s,
+        style: TextStyle(
+          fontFamily: MiFonts.display,
+          fontSize: fs,
+          fontWeight: FontWeight.w600,
+          color: c,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
     void text(String s, Offset at, Color c, double fs) {
       final tp = label(s, c, fs);
       tp.paint(canvas, at - Offset(tp.width / 2, tp.height / 2));
@@ -137,26 +223,46 @@ class _DemoPainter extends CustomPainter {
           final q = Offset.lerp(a, b, k - k.floor())!;
           path.lineTo(q.dx, q.dy);
         }
-        canvas.drawPath(path, Paint()
-          ..color = st.color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = cell * .42
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round);
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = st.color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = cell * .42
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
         for (final (i, num) in [(0, '1'), (3, '2'), (8, '3')]) {
           canvas.drawCircle(ctr(i), cell * .24, ink);
           text(num, ctr(i), Colors.white, cell * .26);
         }
       case GameId.quilt:
         final cols = [0xFF9ED9B0, 0xFFFFD68A, 0xFFA9D3F5];
-        final rects = [const Rect.fromLTWH(0, 0, 2, 1), const Rect.fromLTWH(2, 0, 1, 3), const Rect.fromLTWH(0, 1, 2, 2)];
+        final rects = [
+          const Rect.fromLTWH(0, 0, 2, 1),
+          const Rect.fromLTWH(2, 0, 1, 3),
+          const Rect.fromLTWH(0, 1, 2, 2),
+        ];
         for (var i = 0; i < 3; i++) {
           final shown = (p * 3 - i).clamp(0.0, 1.0);
           if (shown <= 0) continue;
           final r = rects[i];
-          final full = Rect.fromLTWH(r.left * cell + 4, r.top * cell + 4, r.width * cell - 8, r.height * cell - 8);
-          final grow = Rect.fromLTWH(full.left, full.top, full.width * shown, full.height);
-          canvas.drawRRect(RRect.fromRectAndRadius(grow, const Radius.circular(12)), Paint()..color = Color(cols[i]));
+          final full = Rect.fromLTWH(
+            r.left * cell + 4,
+            r.top * cell + 4,
+            r.width * cell - 8,
+            r.height * cell - 8,
+          );
+          final grow = Rect.fromLTWH(
+            full.left,
+            full.top,
+            full.width * shown,
+            full.height,
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(grow, const Radius.circular(12)),
+            Paint()..color = Color(cols[i]),
+          );
         }
         for (final (c, s) in [(0, '2'), (5, '3'), (6, '4')]) {
           canvas.drawCircle(ctr(c), cell * .22, Paint()..color = Colors.white);
@@ -168,11 +274,28 @@ class _DemoPainter extends CustomPainter {
         const word2 = [5, 8, 7, 6, 3, 4];
         for (var i = 0; i < 9; i++) {
           final inA = word.indexOf(i), inB = word2.indexOf(i);
-          final lit = (inA >= 0 && p * 9 > inA) || (inB >= 0 && p * 9 > 3 + inB);
+          final lit =
+              (inA >= 0 && p * 9 > inA) || (inB >= 0 && p * 9 > 3 + inB);
           if (lit) {
-            canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH((i % 3) * cell + 3, (i ~/ 3) * cell + 3, cell - 6, cell - 6), const Radius.circular(12)), Paint()..color = inA >= 0 ? st.color : const Color(0xFFFFC233));
+            canvas.drawRRect(
+              RRect.fromRectAndRadius(
+                Rect.fromLTWH(
+                  (i % 3) * cell + 3,
+                  (i ~/ 3) * cell + 3,
+                  cell - 6,
+                  cell - 6,
+                ),
+                const Radius.circular(12),
+              ),
+              Paint()..color = inA >= 0 ? st.color : const Color(0xFFFFC233),
+            );
           }
-          text(letters[i], ctr(i), lit && inA >= 0 ? Colors.white : const Color(0xFF13213C), cell * .4);
+          text(
+            letters[i],
+            ctr(i),
+            lit && inA >= 0 ? Colors.white : const Color(0xFF13213C),
+            cell * .4,
+          );
         }
       case GameId.sudoku:
         const grid = [1, 0, 3, 4, 3, 4, 0, 2, 2, 0, 4, 3, 4, 3, 2, 0];
@@ -180,15 +303,25 @@ class _DemoPainter extends CustomPainter {
         final line = Paint()
           ..color = const Color(0xFF2B5E91)
           ..strokeWidth = 3;
-        canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), line);
-        canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), line);
+        canvas.drawLine(
+          Offset(size.width / 2, 0),
+          Offset(size.width / 2, size.height),
+          line,
+        );
+        canvas.drawLine(
+          Offset(0, size.height / 2),
+          Offset(size.width, size.height / 2),
+          line,
+        );
         final reveal = (p * 4).floor();
         for (var i = 0; i < 16; i++) {
           if (grid[i] != 0) {
             text('${grid[i]}', ctr(i), const Color(0xFF13213C), cell * .45);
           } else {
             final k = answer.keys.toList().indexOf(i);
-            if (k < reveal) text('${answer[i]}', ctr(i), const Color(0xFF1D6BB0), cell * .45);
+            if (k < reveal) {
+              text('${answer[i]}', ctr(i), const Color(0xFF1D6BB0), cell * .45);
+            }
           }
         }
     }

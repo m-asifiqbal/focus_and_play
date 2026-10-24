@@ -33,6 +33,9 @@ abstract class BoardController extends ChangeNotifier {
   /// "20 of 36 cells" style progress line under the board.
   String get progressText;
 
+  /// Thread's "Next number" chip under the board; null for boards without one.
+  int? get nextNumber => null;
+
   /// Called by the frame when the hint key is pressed on a board with own controls.
   VoidCallback? onHintRequested;
 }

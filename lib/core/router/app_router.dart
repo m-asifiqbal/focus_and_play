@@ -22,6 +22,7 @@ import '../../features/results/tier_complete_screen.dart';
 import '../../features/settings/backup_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/shell/sliding_branches.dart';
 import '../../features/shell/splash_screen.dart';
 import '../../state/save_controller.dart';
 
@@ -59,21 +60,55 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashScreen()),
       GoRoute(path: Routes.welcome, builder: (_, _) => const WelcomeScreen()),
-      GoRoute(path: Routes.tryPuzzle, builder: (_, _) => const TryPuzzleScreen()),
-      GoRoute(path: Routes.pickIsland, builder: (_, _) => const PickIslandScreen()),
-      GoRoute(path: Routes.profile, builder: (_, _) => const ProfileSetupScreen()),
-      StatefulShellRoute.indexedStack(
+      GoRoute(
+        path: Routes.tryPuzzle,
+        builder: (_, _) => const TryPuzzleScreen(),
+      ),
+      GoRoute(
+        path: Routes.pickIsland,
+        builder: (_, _) => const PickIslandScreen(),
+      ),
+      GoRoute(
+        path: Routes.profile,
+        builder: (_, _) => const ProfileSetupScreen(),
+      ),
+      StatefulShellRoute(
         builder: (context, state, shell) => AppShell(shell: shell),
+        // Tabs slide left/right instead of switching instantly.
+        navigatorContainerBuilder: (context, shell, children) =>
+            SlidingBranches(
+              currentIndex: shell.currentIndex,
+              children: children,
+            ),
         branches: [
-          StatefulShellBranch(routes: [GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: Routes.insights, builder: (_, _) => const InsightsScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: Routes.settings, builder: (_, _) => const SettingsScreen())]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: Routes.home, builder: (_, _) => const HomeScreen()),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.insights,
+                builder: (_, _) => const InsightsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.settings,
+                builder: (_, _) => const SettingsScreen(),
+              ),
+            ],
+          ),
         ],
       ),
       GoRoute(
         path: '/island/:game',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (_, s) => IslandScreen(game: GameId.fromKey(s.pathParameters['game']!)),
+        builder: (_, s) =>
+            IslandScreen(game: GameId.fromKey(s.pathParameters['game']!)),
       ),
       GoRoute(
         path: '/play/:game/:level',
@@ -82,17 +117,53 @@ final routerProvider = Provider<GoRouter>((ref) {
           final level = int.tryParse(s.pathParameters['level'] ?? '') ?? 1;
           final spec = s.pathParameters['game'] == 'daily'
               ? LevelConfig.daily(ref.read(clockProvider)())
-              : LevelConfig.forLevel(GameId.fromKey(s.pathParameters['game']!), level.clamp(1, 60));
-          return PlayScreen(spec: spec, key: ValueKey('${spec.game.key}-${spec.level}-${spec.dayKey}'));
+              : LevelConfig.forLevel(
+                  GameId.fromKey(s.pathParameters['game']!),
+                  level.clamp(1, 60),
+                );
+          return PlayScreen(
+            spec: spec,
+            key: ValueKey('${spec.game.key}-${spec.level}-${spec.dayKey}'),
+          );
         },
       ),
-      GoRoute(path: Routes.result, parentNavigatorKey: rootNavigatorKey, builder: (_, s) => ResultScreen(outcome: s.extra! as LevelOutcome)),
-      GoRoute(path: Routes.tier, parentNavigatorKey: rootNavigatorKey, builder: (_, s) => TierCompleteScreen(outcome: s.extra! as LevelOutcome)),
-      GoRoute(path: Routes.outOfLives, parentNavigatorKey: rootNavigatorKey, builder: (_, s) => OutOfLivesScreen(spec: s.extra as LevelSpec?)),
-      GoRoute(path: Routes.adBreak, parentNavigatorKey: rootNavigatorKey, builder: (_, s) => AdBreakScreen(next: s.extra! as String)),
-      GoRoute(path: '/insights/:game', parentNavigatorKey: rootNavigatorKey, builder: (_, s) => GameInsightsScreen(game: GameId.fromKey(s.pathParameters['game']!))),
-      GoRoute(path: Routes.achievements, parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const AchievementsScreen()),
-      GoRoute(path: Routes.backup, parentNavigatorKey: rootNavigatorKey, builder: (_, _) => const BackupScreen()),
+      GoRoute(
+        path: Routes.result,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, s) => ResultScreen(outcome: s.extra! as LevelOutcome),
+      ),
+      GoRoute(
+        path: Routes.tier,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, s) =>
+            TierCompleteScreen(outcome: s.extra! as LevelOutcome),
+      ),
+      GoRoute(
+        path: Routes.outOfLives,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, s) => OutOfLivesScreen(spec: s.extra as LevelSpec?),
+      ),
+      GoRoute(
+        path: Routes.adBreak,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, s) => AdBreakScreen(next: s.extra! as String),
+      ),
+      GoRoute(
+        path: '/insights/:game',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, s) =>
+            GameInsightsScreen(game: GameId.fromKey(s.pathParameters['game']!)),
+      ),
+      GoRoute(
+        path: Routes.achievements,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const AchievementsScreen(),
+      ),
+      GoRoute(
+        path: Routes.backup,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (_, _) => const BackupScreen(),
+      ),
     ],
   );
 });

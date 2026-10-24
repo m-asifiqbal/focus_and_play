@@ -4,8 +4,15 @@
 
 import 'dart:math';
 
+import 'level_config.dart';
 import 'save_data.dart';
 import 'tier.dart';
+
+/// Replaying a level the player already solved (or today's daily again) never
+/// costs a life — so it can be played with no lives left ("chase a better time").
+bool isReplay(SaveData s, LevelSpec spec) => spec.isDaily
+    ? s.daily.containsKey(spec.dayKey)
+    : s.progress(spec.game).levels.containsKey(spec.level);
 
 /// yyyy-MM-dd of a local date.
 String dayKey(DateTime local) =>
@@ -15,8 +22,11 @@ String dayKey(DateTime local) =>
 DateTime dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// Whole days between two local dates (DST-safe: compares calendar dates).
-int daysBetween(DateTime a, DateTime b) =>
-    DateTime.utc(b.year, b.month, b.day).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
+int daysBetween(DateTime a, DateTime b) => DateTime.utc(
+  b.year,
+  b.month,
+  b.day,
+).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
 
 abstract final class EconomyRules {
   static const _period = Economy.refillMinutes * 60 * 1000;
@@ -31,11 +41,17 @@ abstract final class EconomyRules {
       final stamp = e.livesStampMs == 0 ? ms : e.livesStampMs;
       final gained = max(0, (ms - stamp) ~/ _period);
       final lives = min(Economy.maxLives, e.lives + gained);
-      out = out.copyWith(lives: lives, livesStampMs: lives >= Economy.maxLives ? ms : stamp + gained * _period);
+      out = out.copyWith(
+        lives: lives,
+        livesStampMs: lives >= Economy.maxLives ? ms : stamp + gained * _period,
+      );
     }
     final today = dayKey(now);
     if (out.hintDay != today) {
-      out = out.copyWith(hints: max(out.hints, Economy.dailyFreeHints), hintDay: today);
+      out = out.copyWith(
+        hints: max(out.hints, Economy.dailyFreeHints),
+        hintDay: today,
+      );
     }
     return out;
   }
@@ -53,7 +69,9 @@ abstract final class EconomyRules {
     final n = normalise(e, now);
     if (n.lives >= Economy.maxLives) return null;
     final missing = Economy.maxLives - n.lives;
-    return DateTime.fromMillisecondsSinceEpoch(n.livesStampMs + missing * _period);
+    return DateTime.fromMillisecondsSinceEpoch(
+      n.livesStampMs + missing * _period,
+    );
   }
 
   /// Spends one life. The refill clock starts now if lives were full.
@@ -61,29 +79,48 @@ abstract final class EconomyRules {
     final n = normalise(e, now);
     if (n.lives <= 0) return n;
     final wasFull = n.lives >= Economy.maxLives;
-    return n.copyWith(lives: n.lives - 1, livesStampMs: wasFull ? now.millisecondsSinceEpoch : n.livesStampMs);
+    return n.copyWith(
+      lives: n.lives - 1,
+      livesStampMs: wasFull ? now.millisecondsSinceEpoch : n.livesStampMs,
+    );
   }
 
   static Economy addLife(Economy e, DateTime now) {
     final n = normalise(e, now);
     final lives = min(Economy.maxLives, n.lives + 1);
-    return n.copyWith(lives: lives, livesStampMs: lives >= Economy.maxLives ? now.millisecondsSinceEpoch : n.livesStampMs);
+    return n.copyWith(
+      lives: lives,
+      livesStampMs: lives >= Economy.maxLives
+          ? now.millisecondsSinceEpoch
+          : n.livesStampMs,
+    );
   }
 
-  static Economy addHints(Economy e, int count) => e.copyWith(hints: min(Economy.maxHints, e.hints + count));
+  static Economy addHints(Economy e, int count) =>
+      e.copyWith(hints: min(Economy.maxHints, e.hints + count));
 
   static Economy spendHint(Economy e) => e.copyWith(hints: max(0, e.hints - 1));
 }
 
 abstract final class ScoreRules {
   /// Stars: 1 for solving, +1 for beating par, +1 for no hints. Relaxed mode caps at 1.
-  static int stars({required bool relaxed, required int seconds, required int par, required int hints}) {
+  static int stars({
+    required bool relaxed,
+    required int seconds,
+    required int par,
+    required int hints,
+  }) {
     if (relaxed) return 1;
     return 1 + (seconds <= par ? 1 : 0) + (hints == 0 ? 1 : 0);
   }
 
   /// XP for a solve. Harder tiers and the daily puzzle are worth more.
-  static int xp({required int stars, required Tier tier, bool daily = false, bool firstSolve = true}) {
+  static int xp({
+    required int stars,
+    required Tier tier,
+    bool daily = false,
+    bool firstSolve = true,
+  }) {
     final base = 10 + stars * 10 + tier.index * 5 + (daily ? 20 : 0);
     return firstSolve ? base : (base / 4).round();
   }
@@ -95,15 +132,18 @@ abstract final class ScoreRules {
 abstract final class StreakRules {
   /// Local days (yyyy-MM-dd) on which the player solved at least one puzzle.
   static Set<String> solvedDays(SaveData s) => {
-        for (final a in s.attempts)
-          if (a.solved) dayKey(DateTime.fromMillisecondsSinceEpoch(a.at)),
-        ...s.daily.keys,
-      };
+    for (final a in s.attempts)
+      if (a.solved) dayKey(DateTime.fromMillisecondsSinceEpoch(a.at)),
+    ...s.daily.keys,
+  };
 
   /// Current streak: consecutive days ending today (or yesterday, so the streak
   /// isn't shown as broken before the player has played today).
-  static int current(SaveData s, DateTime now) {
-    final days = solvedDays(s);
+  static int current(SaveData s, DateTime now) =>
+      currentFrom(solvedDays(s), now);
+
+  /// [current] from an already computed [solvedDays] set (cheap to call often).
+  static int currentFrom(Set<String> days, DateTime now) {
     var d = dayStart(now);
     if (!days.contains(dayKey(d))) d = d.subtract(const Duration(days: 1));
     var n = 0;

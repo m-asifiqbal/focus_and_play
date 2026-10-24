@@ -20,6 +20,7 @@ import '../../core/widgets/mi_art.dart';
 import '../../core/widgets/mi_buttons.dart';
 import '../../core/widgets/mi_controls.dart';
 import '../../domain/level_config.dart';
+import '../../domain/rules.dart';
 import '../../domain/save_data.dart';
 import '../../state/save_controller.dart';
 import 'board_controller.dart';
@@ -55,15 +56,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   LevelSpec get spec => widget.spec;
 
+  /// A replay of an already solved level (or today's daily again): no lives at stake.
+  /// Decided once, before a solve is recorded.
+  late final bool _replay;
+
   @override
   void initState() {
     super.initState();
+    _replay = isReplay(ref.read(saveProvider), widget.spec);
+    _session.addListener(_clockWarning);
     WidgetsBinding.instance.addObserver(this);
     _load();
   }
 
+  /// Set when the puzzle couldn't be built (never seen in tests; shows a retry).
+  bool _failed = false;
+
   Future<void> _load() async {
-    final puzzle = await generatePuzzleAsync(spec);
+    final Object puzzle;
+    try {
+      puzzle = await generatePuzzleAsync(spec);
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+      return;
+    }
     if (!mounted) return;
     final board = controllerFor(puzzle)
       ..addListener(_onBoard)
@@ -83,6 +99,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return;
     }
     _session.start();
+  }
+
+  int _warnedAt = -1;
+
+  /// A light tap on each of the last five seconds, so a player focused on the
+  /// board feels time running out instead of being surprised by "Time's up".
+  void _clockWarning() {
+    final left = _session.clockLeft;
+    if (_session.relaxed ||
+        _session.paused ||
+        left > 5 ||
+        left <= 0 ||
+        left == _warnedAt) {
+      return;
+    }
+    _warnedAt = left;
+    ref.read(feedbackProvider).tick();
   }
 
   @override
@@ -131,12 +164,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Future<void> _timeUp() async {
     final save = ref.read(saveProvider.notifier);
-    final left = save.loseLife();
-    _session.livesLost++;
+    // Replays of solved levels never cost a life: just a fresh clock.
+    final left = _replay ? save.economyNow.lives : save.loseLife();
+    if (!_replay) _session.livesLost++;
     ref.read(feedbackProvider)
       ..thud()
       ..play(Sfx.lose);
-    if (left <= 0) {
+    if (!_replay && left <= 0) {
       _session.finish();
       save.recordFailure(
         spec,
@@ -152,6 +186,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       livesLeft: left,
       clockSeconds: spec.clockSeconds,
       style: context.island(spec.game),
+      lifeLost: !_replay,
     );
     if (!mounted) return;
     switch (choice) {
@@ -197,7 +232,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _session.hintsUsed++;
     ref.read(feedbackProvider).play(Sfx.hint);
     _hintTimer?.cancel();
-    setState(() => _hintText = note.text);
+    // The first hint of an attempt also says what it cost (the design's hint card).
+    final costNote = _session.hintsUsed == 1 && !_session.relaxed
+        ? '\nThe no-hint star is off for this level.'
+        : '';
+    setState(() => _hintText = '${note.text}$costNote');
     _hintTimer = Timer(const Duration(seconds: 5), () {
       if (mounted) setState(() => _hintText = null);
     });
@@ -310,6 +349,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       session: _session,
                       lives: e.lives,
                       hints: e.hints,
+                      replay: _replay,
                       style: st,
                       showClock: ref.watch(
                         settingsProvider.select((x) => x.showClock),
@@ -328,11 +368,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                   const Pip(size: 72),
                                   const SizedBox(height: 10),
                                   Text(
-                                    'Building your puzzle…',
+                                    _failed
+                                        ? "This puzzle couldn't be built."
+                                        : 'Building your puzzle…',
                                     style: MiText.label.copyWith(
                                       color: c.inkSoft,
                                     ),
                                   ),
+                                  if (_failed)
+                                    MiTextButton(
+                                      label: 'Try again',
+                                      onTap: () {
+                                        setState(() => _failed = false);
+                                        _load();
+                                      },
+                                    ),
                                 ],
                               ),
                             )
@@ -357,16 +407,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                               curve: Curves.easeOutBack,
                                             ),
                                         const SizedBox(height: 12),
-                                        ListenableBuilder(
-                                          listenable: b,
-                                          builder: (_, _) => Text(
-                                            b.progressText,
-                                            style: MiText.small.copyWith(
-                                              color: c.ink,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ),
+                                        BoardStatus(board: b, style: st),
                                         const SizedBox(height: 4),
                                         Text(
                                           ruleLine(b),

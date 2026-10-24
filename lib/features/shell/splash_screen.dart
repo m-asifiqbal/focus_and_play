@@ -29,13 +29,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     save.countSession();
     save.normaliseEconomy();
     _autoBackup();
-    Future<void>.delayed(const Duration(milliseconds: 1400), () {
+    // Just long enough for the logo to pop in (~0.9 s); the save is already loaded.
+    Future<void>.delayed(const Duration(milliseconds: 1000), () {
       if (!mounted) return;
       final onboarded = ref.read(saveProvider).profile.onboarded;
       context.go(onboarded ? Routes.home : Routes.welcome);
       if (onboarded) {
         unawaited(ref.read(adServiceProvider).start());
-        unawaited(ref.read(reminderServiceProvider).sync(ref.read(saveProvider), ref.read(clockProvider)()));
+        unawaited(
+          ref
+              .read(reminderServiceProvider)
+              .sync(ref.read(saveProvider), ref.read(clockProvider)()),
+        );
       }
     });
   }
@@ -48,8 +53,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final now = ref.read(clockProvider)();
     try {
       final list = await store.listBackups();
-      final last = list.where((b) => b.automatic).map((b) => b.createdAt).fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
-      final gap = s.settings.backupWeekly ? const Duration(days: 7) : const Duration(hours: 20);
+      final last = list
+          .where((b) => b.automatic)
+          .map((b) => b.createdAt)
+          .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
+      final gap = s.settings.backupWeekly
+          ? const Duration(days: 7)
+          : const Duration(hours: 20);
       if (last == null || now.difference(last) >= gap) {
         await store.writeLocalBackup(s, now, automatic: true);
       }
@@ -60,31 +70,92 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Widget build(BuildContext context) {
     final instant = MediaQuery.disableAnimationsOf(context);
     Widget square(Color c, int i) {
-      final w = Container(width: 40, height: 40, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(14)));
-      return instant ? w : w.animate().scale(delay: (120 * i).ms, duration: 500.ms, curve: Curves.easeOutBack, begin: Offset.zero);
+      final w = Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: c,
+          borderRadius: BorderRadius.circular(14),
+        ),
+      );
+      return instant
+          ? w
+          : w.animate().scale(
+              delay: (120 * i).ms,
+              duration: 500.ms,
+              curve: Curves.easeOutBack,
+              begin: Offset.zero,
+            );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFF13213C),
       body: Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Stack(alignment: Alignment.center, children: [
-              Column(mainAxisSize: MainAxisSize.min, children: [
-                Row(mainAxisSize: MainAxisSize.min, children: [square(const Color(0xFFF0582A), 0), const SizedBox(width: 8), square(const Color(0xFF1F9D55), 1)]),
-                const SizedBox(height: 8),
-                Row(mainAxisSize: MainAxisSize.min, children: [square(const Color(0xFF8A4FD8), 2), const SizedBox(width: 8), square(const Color(0xFF1E9BDC), 3)]),
-              ]),
-              Container(width: 20, height: 20, decoration: BoxDecoration(color: const Color(0xFFFFC233), shape: BoxShape.circle, border: Border.all(color: const Color(0xFF13213C), width: 4))),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          Text(AppInfo.name, style: MiText.hero.copyWith(color: Colors.white, fontSize: 44, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text('A puzzle island for every mind', style: MiText.body.copyWith(color: const Color(0xFFC9D6EA), fontWeight: FontWeight.w700)),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 96,
+              height: 96,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          square(const Color(0xFFF0582A), 0),
+                          const SizedBox(width: 8),
+                          square(const Color(0xFF1F9D55), 1),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          square(const Color(0xFF8A4FD8), 2),
+                          const SizedBox(width: 8),
+                          square(const Color(0xFF1E9BDC), 3),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFC233),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF13213C),
+                        width: 4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppInfo.name,
+              style: MiText.hero.copyWith(
+                color: Colors.white,
+                fontSize: 44,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'A puzzle island for every mind',
+              style: MiText.body.copyWith(
+                color: const Color(0xFFC9D6EA),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/ads/ad_service.dart';
 import '../../core/router/app_router.dart';
 import '../../domain/level_config.dart';
+import '../../domain/rules.dart';
 import '../../domain/tier.dart';
 import '../../state/save_controller.dart';
 
@@ -20,7 +21,9 @@ void goToNextLevel(BuildContext context, WidgetRef ref, LevelSpec done) {
   final save = ref.read(saveProvider.notifier);
   save.normaliseEconomy();
   final relaxed = ref.read(settingsProvider).relaxed;
-  if (!relaxed && save.economyNow.lives <= 0) {
+  if (!relaxed &&
+      save.economyNow.lives <= 0 &&
+      !isReplay(ref.read(saveProvider), next)) {
     context.pushReplacement(Routes.outOfLives, extra: next);
     return;
   }
