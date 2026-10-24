@@ -61,7 +61,7 @@ lib/
 ## Before release
 
 - **AdMob**: replace the test ids and decide the Families-policy question; both are covered in [docs/ads.md](docs/ads.md).
-- **Application id**: `com.focusandplay.mindisles` is set in `android/app/build.gradle.kts`. Change it, and the iOS bundle id, before the first upload if you want different ones.
+- **Application id**: `com.iqballabs.focus_and_play` is set in `android/app/build.gradle.kts` (Android) and `com.iqballabs.focusAndPlay` in the Xcode project (iOS bundle ids can't contain underscores). It is permanent once the app is on Google Play.
 - **Signing**: until `android/key.properties` exists, the release build is signed with the debug key. Add your upload key there, as in the FocusFlow project.
 - **App icon**: the four-isles logo on navy, drawn by `dart tool/icon/generate.dart`. It writes the Android legacy and adaptive icons (with a monochrome layer for themed icons), the iOS set and `store/play_icon_512.png` for the Play listing. Re-run it if the logo changes.
 - **Sounds**: the files in `assets/sounds/` are synthesised placeholders with no licence issues. Swap them for your own if you like. There is no music.

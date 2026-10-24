@@ -26,7 +26,7 @@ val dartDefines: Map<String, String> = (project.findProperty("dart-defines") as 
     ?: emptyMap()
 
 android {
-    namespace = "com.focusandplay.focus_and_play_mindgame"
+    namespace = "com.iqballabs.focus_and_play"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -39,7 +39,7 @@ android {
 
     defaultConfig {
         // Permanent once published on Google Play — change it before the first upload if needed.
-        applicationId = "com.focusandplay.mindisles"
+        applicationId = "com.iqballabs.focus_and_play"
         // google_mobile_ads needs API 23+.
         minSdk = maxOf(23, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
