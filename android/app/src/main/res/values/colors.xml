@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the Flutter splash so launch → splash has no white flash. -->
+    <color name="splash_navy">#13213C</color>
+    <!-- Adaptive icon background (mipmap-anydpi-v26/ic_launcher.xml). -->
+    <color name="ic_launcher_background">#13213C</color>
+</resources>
