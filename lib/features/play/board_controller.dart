@@ -5,8 +5,21 @@ import 'package:flutter/foundation.dart';
 
 /// A hint the frame can describe in words (the board highlights it visually).
 class HintNote {
-  const HintNote(this.text);
+  const HintNote(
+    this.text, {
+    this.actionLabel,
+    this.onAction,
+    this.free = false,
+  });
   final String text;
+
+  /// A button on the hint card (e.g. "Show me") and what it does. The action may
+  /// return a follow-up note to show in place of this one.
+  final String? actionLabel;
+  final HintNote? Function()? onAction;
+
+  /// The follow-up to an earlier hint: costs no hint and doesn't count as a new one.
+  final bool free;
 }
 
 abstract class BoardController extends ChangeNotifier {
@@ -17,6 +30,10 @@ abstract class BoardController extends ChangeNotifier {
 
   /// Applies one hint; returns what to tell the player, or null if nothing was shown.
   HintNote? hint();
+
+  /// True while a multi-step hint waits for its follow-up (pressing Hint again
+  /// finishes it for free), so the frame must not ask for a hint to be spent.
+  bool get hintPending => false;
 
   bool get canUndo;
   void undo();

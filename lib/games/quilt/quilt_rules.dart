@@ -7,6 +7,55 @@
 import 'package:focus_and_play_mindgame/games/quilt/quilt_puzzle.dart';
 import 'package:focus_and_play_mindgame/games/quilt/quilt_solver.dart';
 
+/// Why a drawn patch is not right (what the UI explains in words).
+enum QuiltFaultKind {
+  /// The patch holds no clue.
+  noClue,
+
+  /// The patch holds two or more clues.
+  manyClues,
+
+  /// The clue's area differs from the patch's.
+  wrongArea,
+
+  /// The clue's shape (square / tall / wide) differs from the patch's.
+  wrongShape,
+}
+
+/// The first reason a patch does not fit, with the numbers the message needs.
+class QuiltFault {
+  const QuiltFault(
+    this.kind, {
+    this.clues = 0,
+    this.needArea,
+    this.haveArea,
+    this.needShape,
+    this.haveShape,
+  });
+  final QuiltFaultKind kind;
+
+  /// How many clues the patch holds (for [QuiltFaultKind.manyClues]).
+  final int clues;
+  final int? needArea, haveArea;
+  final QuiltShape? needShape, haveShape;
+}
+
+/// The next teaching hint: which clue, where its patch goes, and how many
+/// placements the clue had left before this one was chosen.
+class QuiltHintPlan {
+  const QuiltHintPlan({
+    required this.clue,
+    required this.rect,
+    required this.options,
+  });
+  final int clue;
+  final QuiltRect rect;
+
+  /// Placements of that clue that don't overlap correctly placed patches (1 means
+  /// the clue is forced).
+  final int options;
+}
+
 /// Pure rule checks for Quilt.
 class QuiltRules {
   QuiltRules._();
@@ -47,11 +96,60 @@ class QuiltRules {
     return count == n * n;
   }
 
+  /// Why [r] does not fit, or null when it does ([fits] is exactly `fault == null`
+  /// for rectangles inside the grid). A patch outside the grid counts as clue-less.
+  static QuiltFault? fault(QuiltPuzzle p, QuiltRect r) {
+    if (!r.isInside(p.size)) return const QuiltFault(QuiltFaultKind.noClue);
+    var inside = 0;
+    QuiltClue? only;
+    for (final c in p.clues) {
+      if (!r.contains(c.cell, p.size)) continue;
+      inside++;
+      only = c;
+    }
+    if (inside == 0) return const QuiltFault(QuiltFaultKind.noClue);
+    if (inside > 1) return QuiltFault(QuiltFaultKind.manyClues, clues: inside);
+    final c = only!;
+    if (c.area != null && r.area != c.area) {
+      return QuiltFault(
+        QuiltFaultKind.wrongArea,
+        clues: 1,
+        needArea: c.area,
+        haveArea: r.area,
+      );
+    }
+    if (c.shape != null && r.shape != c.shape) {
+      return QuiltFault(
+        QuiltFaultKind.wrongShape,
+        clues: 1,
+        needShape: c.shape,
+        haveShape: r.shape,
+      );
+    }
+    return null;
+  }
+
+  /// Placed patches that are not part of the (unique) solution. A patch can fit its
+  /// clue and still be wrong because it blocks another clue — only the solution
+  /// tells, which is why this is a hint and not live feedback.
+  static List<QuiltRect> wrongPatches(QuiltPuzzle p, List<QuiltRect> placed) {
+    final sol = p.solution.toSet();
+    return [
+      for (final r in placed)
+        if (!sol.contains(r)) r,
+    ];
+  }
+
   /// Hint: a solution patch that is not placed exactly yet. Prefers the clue with the
   /// fewest possible placements left (rectangles that fit it and don't overlap the
   /// correctly placed patches) — the most "obvious" next step — then clue order.
   /// Null when every solution patch is already placed (which includes solved).
-  static QuiltRect? hint(QuiltPuzzle p, List<QuiltRect> placed) {
+  static QuiltRect? hint(QuiltPuzzle p, List<QuiltRect> placed) =>
+      hintPlan(p, placed)?.rect;
+
+  /// [hint] with the clue and the number of placements it had left, so the UI can
+  /// explain the step ("only one place it can go").
+  static QuiltHintPlan? hintPlan(QuiltPuzzle p, List<QuiltRect> placed) {
     if (isSolved(p, placed)) return null;
     final done = placed.toSet();
     final correct = [
@@ -72,6 +170,8 @@ class QuiltRules {
         bestCount = options;
       }
     }
-    return best == null ? null : p.solution[best];
+    return best == null
+        ? null
+        : QuiltHintPlan(clue: best, rect: p.solution[best], options: bestCount);
   }
 }

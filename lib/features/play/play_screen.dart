@@ -50,6 +50,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool _celebrating = false;
   String? _hintText;
   Timer? _hintTimer;
+
+  /// The hint card's button ("Show me") while a two-step hint is waiting.
+  HintNote? _hintAction;
   final _livesKey = GlobalKey(),
       _clockKey = GlobalKey(),
       _hintsKey = GlobalKey();
@@ -135,8 +138,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   void _onBoard() {
     final b = _board;
-    if (b == null || _session.over || !b.solved) return;
+    if (b == null || _session.over) return;
+    // The player moved on from a two-step hint (placed, undid, reset…): its card
+    // and "Show me" button are stale.
+    if (_hintAction != null && !b.hintPending) _clearHint();
+    if (!b.solved) return;
     _solved();
+  }
+
+  void _clearHint() {
+    _hintTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _hintText = null;
+        _hintAction = null;
+      });
+    }
   }
 
   Future<void> _solved() async {
@@ -207,7 +224,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (b == null || _session.over || !b.canHint) return;
     final save = ref.read(saveProvider.notifier);
     var hints = save.economyNow.hints;
-    if (hints <= 0) {
+    // Finishing a two-step hint is free: no ad prompt, no confirmation.
+    final followUp = b.hintPending;
+    if (hints <= 0 && !followUp) {
       _session.pause();
       final ads = ref.read(adServiceProvider);
       final watch = await showOutOfHints(context, adReady: ads.rewardedReady);
@@ -219,7 +238,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _session.resume();
       if (hints <= 0) return;
     }
-    if (ref.read(settingsProvider).confirmHint) {
+    if (ref.read(settingsProvider).confirmHint && !followUp) {
       _session.pause();
       final ok = await confirmHint(context, hints);
       if (!mounted) return;
@@ -228,18 +247,39 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     final note = b.hint();
     if (note == null) return;
-    save.spendHint();
-    _session.hintsUsed++;
+    if (!note.free) {
+      save.spendHint();
+      _session.hintsUsed++;
+    }
     ref.read(feedbackProvider).play(Sfx.hint);
-    _hintTimer?.cancel();
     // The first hint of an attempt also says what it cost (the design's hint card).
-    final costNote = _session.hintsUsed == 1 && !_session.relaxed
+    final costNote = !note.free && _session.hintsUsed == 1 && !_session.relaxed
         ? '\nThe no-hint star is off for this level.'
         : '';
-    setState(() => _hintText = '${note.text}$costNote');
-    _hintTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted) setState(() => _hintText = null);
+    _showHint(note, costNote);
+  }
+
+  /// Shows [note] on the hint card. A note with a button stays until it is used
+  /// or dismissed (the player is reading and deciding); a plain one fades after 5 s.
+  void _showHint(HintNote note, [String costNote = '']) {
+    _hintTimer?.cancel();
+    setState(() {
+      _hintText = '${note.text}$costNote';
+      _hintAction = note.actionLabel == null ? null : note;
     });
+    _hintTimer = Timer(
+      Duration(seconds: note.actionLabel == null ? 5 : 25),
+      _clearHint,
+    );
+  }
+
+  void _useHintAction() {
+    final next = _hintAction?.onAction?.call();
+    if (next == null) {
+      _clearHint();
+    } else {
+      _showHint(next);
+    }
   }
 
   Future<void> _pause() async {
@@ -494,16 +534,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
-                                  _hintText!,
-                                  style: MiText.label.copyWith(color: c.ink),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _hintText!,
+                                      style: MiText.label.copyWith(
+                                        color: c.ink,
+                                      ),
+                                    ),
+                                    if (_hintAction != null)
+                                      MiTextButton(
+                                        label: _hintAction!.actionLabel!,
+                                        color: c.brandInk,
+                                        onTap: _useHintAction,
+                                      ),
+                                  ],
                                 ),
                               ),
                               MiIconButton(
                                 icon: Icons.close_rounded,
                                 label: 'Dismiss hint',
                                 background: Colors.transparent,
-                                onTap: () => setState(() => _hintText = null),
+                                onTap: _clearHint,
                               ),
                             ],
                           ),

@@ -21,7 +21,7 @@ List<String> howToSteps(GameId g) => switch (g) {
   GameId.quilt => [
     'Drag across squares to stitch a rectangle patch.',
     'Each patch holds exactly one clue: its size, or its shape (square, tall or wide).',
-    'Cover the whole field. Tap a patch to unpick it.',
+    'Cover the whole field. Tap a patch to unpick it. A wrong patch turns red and tells you why.',
   ],
   GameId.twist => [
     'Drag across neighbouring tiles to spell a word.',

@@ -5,6 +5,7 @@
 
 import 'dart:math';
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -368,6 +369,9 @@ class _TwistBoardState extends ConsumerState<TwistBoard>
                       label:
                           'Twist board, ${p.rows} by ${p.cols} letters. ${c.progressText}.',
                       child: GestureDetector(
+                        // Start where the finger landed, not where the swipe was recognised
+                        // (a quick flick would otherwise begin on the wrong square).
+                        dragStartBehavior: DragStartBehavior.down,
                         onPanStart: (d) {
                           _lastDrag = d.localPosition;
                           _touch(_cellAt(d.localPosition, strict: false));

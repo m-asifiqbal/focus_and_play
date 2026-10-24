@@ -6,6 +6,7 @@
 
 import 'dart:math';
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -255,6 +256,9 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
                 label:
                     'Thread board, ${c.n} by ${c.n}. ${c.progressText}. Next number ${ThreadRules.nextNumber(c.puzzle, c.path)}.',
                 child: GestureDetector(
+                  // Start where the finger landed, not where the swipe was recognised
+                  // (a quick flick would otherwise begin on the wrong square).
+                  dragStartBehavior: DragStartBehavior.down,
                   onPanStart: (d) {
                     c.beginStroke();
                     _lastDrag = d.localPosition;
