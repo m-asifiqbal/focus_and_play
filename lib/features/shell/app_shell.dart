@@ -1,13 +1,13 @@
 // The three-tab shell (Home, Insights, Settings) and Android back handling:
-// another tab → Home; Home → "Leave Mind Isles?".
+// another tab → Home; Home → "Leaving already?".
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_info.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/mi_colors.dart';
+import '../../core/widgets/mi_dialog.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
@@ -18,27 +18,16 @@ class AppShell extends StatelessWidget {
       shell.goBranch(0);
       return;
     }
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Leave ${AppInfo.name}?', style: MiText.title),
-        content: Text(
-          'Your progress is saved.',
-          style: MiText.body.copyWith(color: ctx.mi.inkSoft),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Stay'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Leave'),
-          ),
-        ],
-      ),
+    final leave = await showMiConfirm(
+      context,
+      pip: true,
+      title: 'Leaving already?',
+      message: 'Your progress is saved. Pip will keep your islands warm!',
+      confirmLabel: 'Leave',
+      cancelLabel: 'Stay and play',
+      confirmIsPrimary: false,
     );
-    if (leave == true) await SystemNavigator.pop();
+    if (leave) await SystemNavigator.pop();
   }
 
   @override

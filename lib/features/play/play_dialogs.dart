@@ -9,6 +9,7 @@ import '../../core/theme/island_style.dart';
 import '../../core/theme/mi_colors.dart';
 import '../../core/widgets/mi_buttons.dart';
 import '../../core/widgets/mi_controls.dart';
+import '../../core/widgets/mi_dialog.dart';
 import 'play_hud.dart' show clockText;
 import '../../core/constants/plural.dart';
 
@@ -245,50 +246,28 @@ Future<bool> showOutOfHints(
   return r ?? false;
 }
 
-Future<bool> confirmHint(BuildContext context, int left) async {
-  final r = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Use a hint?', style: MiText.title),
-      content: Text(
-        'You have $left. Using one takes away this level\'s no-hint star.',
-        style: MiText.body.copyWith(color: ctx.mi.inkSoft),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Not now'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Use hint'),
-        ),
-      ],
-    ),
+Future<bool> confirmHint(BuildContext context, int left) {
+  return showMiConfirm(
+    context,
+    icon: Icons.lightbulb_rounded,
+    tone: MiDialogTone.sun,
+    title: 'Use a hint?',
+    message:
+        "You have ${plural(left, 'hint')}. Using one takes away this level's no-hint star.",
+    confirmLabel: 'Use a hint',
+    cancelLabel: 'Not now',
   );
-  return r ?? false;
 }
 
-Future<bool> confirmLeave(BuildContext context) async {
-  final r = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Leave this level?', style: MiText.title),
-      content: Text(
-        "Your board won't be saved. You won't lose a life.",
-        style: MiText.body.copyWith(color: ctx.mi.inkSoft),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Keep playing'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Leave'),
-        ),
-      ],
-    ),
+Future<bool> confirmLeave(BuildContext context) {
+  return showMiConfirm(
+    context,
+    icon: Icons.logout_rounded,
+    tone: MiDialogTone.sun,
+    title: 'Leave this level?',
+    message: "Your board won't be saved. You won't lose a life.",
+    confirmLabel: 'Leave',
+    cancelLabel: 'Keep playing',
+    confirmIsPrimary: false,
   );
-  return r ?? false;
 }

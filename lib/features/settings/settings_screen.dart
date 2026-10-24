@@ -16,6 +16,7 @@ import '../../core/theme/mi_colors.dart';
 import '../../core/widgets/mi_art.dart';
 import '../../core/widgets/mi_buttons.dart';
 import '../../core/widgets/mi_controls.dart';
+import '../../core/widgets/mi_dialog.dart';
 import '../../core/widgets/pinned_page.dart';
 import '../../domain/game_id.dart';
 import '../../domain/save_data.dart';
@@ -343,27 +344,17 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Reset all progress?', style: MiText.title),
-        content: Text(
-          'Levels, stars, insights and achievements on this phone are cleared. Your name and settings stay. A backup is saved first, just in case.',
-          style: MiText.body.copyWith(color: ctx.mi.inkSoft),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Reset', style: TextStyle(color: ctx.mi.danger)),
-          ),
-        ],
-      ),
+    final ok = await showMiConfirm(
+      context,
+      icon: Icons.restart_alt_rounded,
+      tone: MiDialogTone.danger,
+      title: 'Reset all progress?',
+      message: 'Levels, stars, insights and achievements on this phone are cleared. Your name and settings stay. A backup is saved first, just in case.',
+      confirmLabel: 'Reset',
+      cancelLabel: 'Keep my progress',
+      confirmIsPrimary: false,
     );
-    if (ok != true) return;
+    if (!ok) return;
     await ref
         .read(saveStoreProvider)
         .writeLocalBackup(ref.read(saveProvider), ref.read(clockProvider)());

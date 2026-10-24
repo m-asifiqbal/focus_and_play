@@ -1,7 +1,8 @@
 // Twist: trace hidden words through neighbouring letter tiles.
 //
 // Drag across tiles (or tap them one by one, then tap the last tile again to
-// submit). Found words lock in their colour; hint letters glow in the sun colour.
+// submit). Found words lock in their colour; hint letters glow in the sun
+// colour.
 
 import 'dart:math';
 
@@ -35,12 +36,12 @@ class TwistController extends BoardController {
   final Map<int, int> revealed = {};
   List<int> traced = [];
 
-  /// Short message after a submit ("Not one of the words", …); cleared on the next move.
+  /// Short message after a submit ("Not one of the words", …); cleared on the
+  /// next move.
   String? message;
 
   /// Whether [message] is good news (a found word) rather than a miss.
   bool messageGood = false;
-  int shake = 0;
 
   /// Found word → the word whose first letter that find revealed for free, so
   /// undoing the find takes the free letter back too.
@@ -107,7 +108,6 @@ class TwistController extends BoardController {
         ? 'Right word — try other tiles'
         : (traced.length >= 4 ? '"$tracedWord" isn\'t one of the words' : null);
     traced = [];
-    shake++;
     notifyListeners();
     return message == null ? 0 : -1;
   }
@@ -115,7 +115,8 @@ class TwistController extends BoardController {
   /// After the player finds a word, the next unfound word (shortest first — the
   /// order the slots are listed in) that shows no letter yet gets its first
   /// letter for free. It is not a hint: no hint is spent, no star is lost.
-  /// Returns that word's index, or null when every unfound word already shows one.
+  /// Returns that word's index, or null when every unfound word already shows
+  /// one.
   int? _revealNextFirstLetter(int foundIdx) {
     for (var i = 0; i < puzzle.words.length; i++) {
       if (found.contains(i) || (revealed[i] ?? 0) > 0) continue;
@@ -146,8 +147,9 @@ class TwistController extends BoardController {
     }
     traced = [];
     notifyListeners();
+    final start = w.word.substring(0, h.lettersShown);
     return HintNote(
-      'A ${w.word.length}-letter word starts with ${w.word.substring(0, h.lettersShown)} — the glowing tiles.',
+      'A ${w.word.length}-letter word starts with $start — the glowing tiles.',
     );
   }
 
@@ -367,10 +369,12 @@ class _TwistBoardState extends ConsumerState<TwistBoard>
                     ),
                     child: Semantics(
                       label:
-                          'Twist board, ${p.rows} by ${p.cols} letters. ${c.progressText}.',
+                          'Twist board, ${p.rows} by ${p.cols} letters. '
+                          '${c.progressText}.',
                       child: GestureDetector(
-                        // Start where the finger landed, not where the swipe was recognised
-                        // (a quick flick would otherwise begin on the wrong square).
+                        // Start where the finger landed, not where the swipe was
+                        // recognized (a quick flick would otherwise begin on
+                        // the wrong square).
                         dragStartBehavior: DragStartBehavior.down,
                         onPanStart: (d) {
                           _lastDrag = d.localPosition;
@@ -497,7 +501,8 @@ class _TwistBoardState extends ConsumerState<TwistBoard>
       ),
       child: letter,
     );
-    // Only glowing (hinted) tiles listen to the glow animation; the rest are static.
+    // Only glowing (hinted) tiles listen to the glow animation; the rest are
+    // static.
     final tile = hinted
         ? AnimatedBuilder(
             animation: _glow,

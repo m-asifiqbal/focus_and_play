@@ -8,8 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../core/storage/save_store.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/theme/mi_colors.dart';
+import '../../core/widgets/mi_dialog.dart';
 import '../../state/save_controller.dart';
 import '../../core/constants/plural.dart';
 
@@ -22,27 +21,15 @@ void _snack(BuildContext context, String text) {
 /// Asks before replacing progress, showing what's inside the backup.
 Future<bool> confirmRestore(BuildContext context, BackupInfo info) async {
   final when = DateFormat('d MMM y, h:mm a').format(info.createdAt);
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Restore this backup?', style: MiText.title),
-      content: Text(
+  return showMiConfirm(
+    context,
+    icon: Icons.settings_backup_restore_rounded,
+    title: 'Restore this backup?',
+    message:
         'Saved $when · ${plural(info.levels, 'level')} · ${plural(info.stars, 'star')}.\n\nThis replaces the progress, stars and settings on this phone.',
-        style: MiText.body.copyWith(color: ctx.mi.inkSoft),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Restore'),
-        ),
-      ],
-    ),
+    confirmLabel: 'Restore',
+    cancelLabel: 'Cancel',
   );
-  return ok ?? false;
 }
 
 /// Lets the player pick a .mindisles file and restores it after confirming.

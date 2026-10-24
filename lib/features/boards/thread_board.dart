@@ -1,8 +1,8 @@
 // Thread: one path through every square, passing the numbers in order.
 //
 // Drag from 1; dragging back over the thread rewinds it; fast drags along a row
-// or column fill the squares in between. Hints rewind to the last correct square
-// and light the next few squares in sun yellow.
+// or column fill the squares in between. Hints rewind to the last correct
+// square and light the next few squares in sun yellow.
 
 import 'dart:math';
 
@@ -41,8 +41,8 @@ class ThreadController extends BoardController {
   @override
   int? get nextNumber {
     if (solved) return null;
-    final n = ThreadRules.nextNumber(puzzle, path);
-    return n > puzzle.maxNumber ? null : n;
+    final next = ThreadRules.nextNumber(puzzle, path);
+    return next > puzzle.maxNumber ? null : next;
   }
 
   void beginStroke() => _strokeStart = List.of(path);
@@ -61,8 +61,9 @@ class ThreadController extends BoardController {
     return true;
   }
 
-  /// Moves the thread's head to [cell]: start, extend, fill a straight run, or rewind.
-  /// Returns how many squares were added (negative when rewound, 0 for no change).
+  /// Moves the thread's head to [cell]: start, extend, fill a straight run, or
+  /// rewind. Returns how many squares were added (negative when rewound, 0 for
+  /// no change).
   int moveTo(int cell) {
     if (path.isEmpty) {
       if (puzzle.numbers[cell] == 1) {
@@ -253,18 +254,23 @@ class _ThreadBoardState extends ConsumerState<ThreadBoard>
             child: ListenableBuilder(
               listenable: c,
               builder: (context, _) => Semantics(
-                label:
-                    'Thread board, ${c.n} by ${c.n}. ${c.progressText}. Next number ${ThreadRules.nextNumber(c.puzzle, c.path)}.',
+                label: [
+                  'Thread board, ${c.n} by ${c.n}.',
+                  '${c.progressText}.',
+                  if (c.nextNumber != null) 'Next number ${c.nextNumber}.',
+                ].join(' '),
                 child: GestureDetector(
-                  // Start where the finger landed, not where the swipe was recognised
-                  // (a quick flick would otherwise begin on the wrong square).
+                  // Start where the finger landed, not where the swipe was
+                  // recognized (a quick flick would otherwise begin on the
+                  // wrong square).
                   dragStartBehavior: DragStartBehavior.down,
                   onPanStart: (d) {
                     c.beginStroke();
                     _lastDrag = d.localPosition;
                     _move(_cellAt(d.localPosition, strict: false));
                   },
-                  // Walk the line since the last update so a fast swipe doesn't skip squares.
+                  // Walk the line since the last update so a fast swipe doesn't
+                  // skip squares.
                   onPanUpdate: (d) {
                     final from = _lastDrag ?? d.localPosition;
                     _lastDrag = d.localPosition;
